@@ -1,0 +1,5 @@
+doc/
+lib/
+var/
+*.exe
+deepstream
