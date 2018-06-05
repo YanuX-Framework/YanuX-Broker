@@ -7,7 +7,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch Program",
+            "name": "Launch YanuX Broker",
             "program": "${workspaceFolder}\\src\\index.js"
         }
     ]

@@ -5,11 +5,12 @@ const hooks = require('./resources.hooks');
 
 module.exports = function (app) {
   const Model = createModel(app);
-  const paginate = app.get('paginate');
+  /* NOTE: I disabled pagination because I don't think that I will need it. */
+  /* const paginate = app.get('paginate'); */
 
   const options = {
     Model,
-    paginate
+    /* paginate */
   };
 
   // Initialize our service with any options it requires
