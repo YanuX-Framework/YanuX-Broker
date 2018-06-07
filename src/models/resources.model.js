@@ -7,6 +7,7 @@ module.exports = function (app) {
   const { Schema } = mongooseClient;
 
   const resources = new Schema({
+    // TODO: "app" and "user" should be stored in their own collections and I should should reference the proper ones here.
     app: { type: String, required: true },
     user: { type: String, required: true },
     data: { type: Object, default: {} }
