@@ -3,6 +3,7 @@
   "description": "YanuX Broker",
   "version": "1.0.0",
   "repository": "github:YanuX-Framework/YanuX-Broker",
+  "private": true,
   "main": "src",
   "keywords": [
     "feathers"
@@ -22,8 +23,8 @@
   "scripts": {
     "test": "npm run eslint && npm run mocha",
     "eslint": "eslint src/. test/. --config .eslintrc.json",
-    "start": "node src/",
-    "mocha": "mocha test/ --recursive --exit"
+    "mocha": "mocha test/ --recursive --exit",
+    "start": "node src/"
   },
   "dependencies": {
     "@feathersjs/authentication": "^2.1.7",
@@ -44,7 +45,8 @@
     "winston": "^3.0.0"
   },
   "devDependencies": {
-    "eslint": "^5.2.0",
+    "ajv": "^6.5.2",
+    "eslint": "^5.3.0",
     "mocha": "^5.2.0",
     "request": "^2.87.0",
     "request-promise": "^4.2.2"

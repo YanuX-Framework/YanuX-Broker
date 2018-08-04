@@ -7,7 +7,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch YanuX Broker",
+            "name": "Debug YanuX Broker",
             "program": "${workspaceFolder}/src/index.js",
             "outputCapture": "std"
         }
