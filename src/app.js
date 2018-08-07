@@ -3,7 +3,8 @@ const favicon = require('serve-favicon');
 const compress = require('compression');
 const helmet = require('helmet');
 const cors = require('cors');
-const logger = require('winston');
+const winston = require('winston');
+
 
 const feathers = require('@feathersjs/feathers');
 const configuration = require('@feathersjs/configuration');
@@ -46,6 +47,10 @@ app.configure(channels);
 
 // Configure a middleware for 404s and the error handler
 app.use(express.notFound());
+
+const logger = winston.createLogger({
+    transports: [new winston.transports.Console()]
+});
 app.use(express.errorHandler({ logger }));
 app.hooks(appHooks);
 
