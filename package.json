@@ -40,7 +40,9 @@
     "feathers-mongodb": "^3.2.0",
     "feathers-mongoose": "^6.1.2",
     "helmet": "^3.13.0",
+    "lodash": "^4.17.10",
     "mongoose": "^5.2.6",
+    "passport-custom": "^1.0.5",
     "serve-favicon": "^2.5.0",
     "winston": "^3.0.0"
   },
