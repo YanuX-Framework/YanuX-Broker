@@ -1,19 +1,18 @@
 const Debug = require('debug');
 const { omit } = require('lodash');
 const request = require('request');
-
 const debug = Debug('@feathersjs/authentication-local:yanux-auth:verify');
+const { Conflict } = require("@feathersjs/errors");
+
 
 class YanuxVerifier {
     constructor(app, options = {}) {
         this.app = app;
         this.options = options;
         this.service = typeof options.service === 'string' ? app.service(options.service) : options.service;
-
         if (!this.service) {
             throw new Error(`options.service does not exist.\n\tMake sure you are passing a valid service path or service instance and that it is initialized.`);
         }
-
         this._normalizeResult = this._normalizeResult.bind(this);
         this.verify = this.verify.bind(this);
     }
@@ -34,7 +33,9 @@ class YanuxVerifier {
 
     verify(req, done) {
         debug('Checking if the provided access token is valid');
-        let accessToken = req.body[this.options.accessTokenKey] || (req.headers[this.options.authorizationHeader] ? req.headers[this.options.authorizationHeader].replace('Bearer ', '') : null)
+        const accessTokenKey = this.options.accessTokenKey;
+        const authorizationHeader = this.options.authorizationHeader
+        const accessToken = req.body[accessTokenKey] || (req.headers[authorizationHeader] ? req.headers[authorizationHeader].replace('Bearer ', '') : null)
         if (typeof accessToken !== 'string') {
             return done(new Error('The accessToken is missing from your authentication request.'));
         }
@@ -45,13 +46,13 @@ class YanuxVerifier {
                 } else if (httpResponse.statusCode != 200) {
                     return done(new Error('The provided access token is not valid.'));
                 } else {
-                    const verificationRes = JSON.parse(body);
+                    const username = JSON.parse(body).response.user.email;
                     const id = this.service.id;
                     const usernameField = this.options.entityUsernameField || this.options.usernameField;
                     const reqParams = omit(req.params, 'query', 'provider', 'headers', 'session', 'cookies');
                     const params = Object.assign({
                         'query': {
-                            [usernameField]: verificationRes.response.user.email,
+                            [usernameField]: username,
                             '$limit': 1
                         }
                     }, reqParams);
@@ -77,9 +78,15 @@ class YanuxVerifier {
                                 done(null, entity, payload);
                             }).catch(error => error ? done(error) : done(null, error, { message: 'Invalid login' }));
 
-                    this.service.create({ usernameField: verificationRes.response.user.email }, reqParams)
+                    this.service.create({ usernameField: username }, reqParams)
                         .then(authenticationService)
-                        .catch(authenticationService);
+                        .catch(err => {
+                            if (!(err instanceof Conflict)) {
+                                done(err);
+                            } else {
+                                return authenticationService();
+                            }
+                        });
                 }
             });
     }

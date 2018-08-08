@@ -8,7 +8,8 @@ const debug = Debug('@yanux/broker:yanux-auth');
 const defaults = {
     name: 'yanux',
     accessTokenKey: 'accessToken',
-    authorizationHeader: 'authorization'
+    authorizationHeader: 'authorization',
+    usernameField: 'email'
 };
 
 const KEYS = [
@@ -29,9 +30,6 @@ function init(options = {}) {
         }
 
         let name = options.name || defaults.name;
-        let accessTokenKey = options.accessTokenKey || defaults.accessTokenKey;
-        let authorizationHeader = options.authorizationHeader || defaults.authorizationHeader;
-
         let authOptions = app.get('authentication') || {};
         let yanuxOptions = authOptions[name] || {};
 
@@ -40,25 +38,21 @@ function init(options = {}) {
         if (typeof yanuxSettings.url !== 'string') {
             throw new Error(`You must provide the URL of the verification endpoint in your authentication configuration or just pass the value explicitly.`);
         }
-        let Verifier = DefaultVerifier;
 
+        let Verifier = DefaultVerifier;
         if (options.Verifier) {
             Verifier = options.Verifier;
         }
-
         app.setup = function () {
             let result = _super.apply(this, arguments);
             let verifier = new Verifier(app, yanuxSettings);
-
             if (!verifier.verify) {
                 throw new Error(`Your verifier must implement a 'verify' function. It should have the same signature as a local passport verify callback.`);
             }
-
             // Register 'local' strategy with passport
             debug('Registering YanuX authentication strategy with options:', yanuxSettings);
             app.passport.use(yanuxSettings.name, new passportCustom.Strategy(verifier.verify.bind(verifier)));
             app.passport.options(yanuxSettings.name, yanuxSettings);
-
             return result;
         };
     };
