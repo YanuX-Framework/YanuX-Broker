@@ -44,7 +44,8 @@ module.exports = function (app) {
     return app.channel('authenticated');
   }); */
 
-  app.service('resources').publish((data, context) => {
+  // Publishing events from all events to the user specific channel.
+  app.publish((data, context) => {
     return app.channel(`user/${context.params.user.email}`);
   })
 
