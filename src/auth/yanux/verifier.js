@@ -77,8 +77,10 @@ class YanuxVerifier {
                                 const payload = { [`${this.options.entity}Id`]: id };
                                 done(null, entity, payload);
                             }).catch(error => error ? done(error) : done(null, error, { message: 'Invalid login' }));
-
-                    this.service.create({ usernameField: username }, reqParams)
+                    
+                    const user = {};
+                    user[usernameField] = username;
+                    this.service.create(user, reqParams)
                         .then(authenticationService)
                         .catch(err => {
                             if (!(err instanceof Conflict)) {

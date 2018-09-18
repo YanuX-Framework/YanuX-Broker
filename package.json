@@ -21,21 +21,21 @@
     "npm": ">= 3.0.0"
   },
   "scripts": {
+    "serve": "node src/",
+    "start": "npx nodemon src/",
     "test": "npm run eslint && npm run mocha",
     "eslint": "eslint src/. test/. --config .eslintrc.json",
-    "mocha": "mocha test/ --recursive --exit",
-    "start": "node src/",
-    "watch:server": "npx nodemon src/"
+    "mocha": "mocha test/ --recursive --exit"
   },
   "dependencies": {
-    "@feathersjs/authentication": "^2.1.9",
-    "@feathersjs/authentication-jwt": "^2.0.3",
-    "@feathersjs/authentication-local": "^1.2.3",
-    "@feathersjs/configuration": "^2.0.2",
-    "@feathersjs/errors": "^3.3.2",
-    "@feathersjs/express": "^1.2.5",
-    "@feathersjs/feathers": "^3.2.1",
-    "@feathersjs/socketio": "^3.2.4",
+    "@feathersjs/authentication": "^2.1.10",
+    "@feathersjs/authentication-jwt": "^2.0.4",
+    "@feathersjs/authentication-local": "^1.2.4",
+    "@feathersjs/configuration": "^2.0.3",
+    "@feathersjs/errors": "^3.3.3",
+    "@feathersjs/express": "^1.2.6",
+    "@feathersjs/feathers": "^3.2.2",
+    "@feathersjs/socketio": "^3.2.5",
     "compression": "^1.7.3",
     "cors": "^2.8.4",
     "debug": "^4.0.1",
