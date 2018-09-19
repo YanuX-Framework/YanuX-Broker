@@ -5,7 +5,6 @@ const helmet = require('helmet');
 const cors = require('cors');
 const winston = require('winston');
 
-
 const feathers = require('@feathersjs/feathers');
 const configuration = require('@feathersjs/configuration');
 const express = require('@feathersjs/express');
@@ -15,6 +14,7 @@ const middleware = require('./middleware');
 const services = require('./services');
 const appHooks = require('./app.hooks');
 const channels = require('./channels');
+const mongodb = require('./mongodb');
 const mongoose = require('./mongoose');
 const authentication = require('./authentication');
 
@@ -35,6 +35,7 @@ app.use('/', express.static(app.get('public')));
 // Set up Plugins and providers
 app.configure(express.rest());
 app.configure(socketio());
+app.configure(mongodb);
 app.configure(mongoose);
 
 // Configure other middleware (see `middleware/index.js`)

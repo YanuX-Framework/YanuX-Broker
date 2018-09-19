@@ -20,7 +20,7 @@
       "header": {
         "typ": "access"
       },
-      "audience": "https://yanux.com",
+      "audience": "https://www.yanux.org",
       "subject": "anonymous",
       "issuer": "feathers",
       "algorithm": "HS256",

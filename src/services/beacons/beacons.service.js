@@ -1,12 +1,14 @@
 // Initializes the `beacons` service on path `/beacons`
-const createService = require('./beacons.class.js');
+const createService = require('feathers-mongoose');
+const createModel = require('../../models/beacons.model');
 const hooks = require('./beacons.hooks');
 
 module.exports = function (app) {
-  
+  const Model = createModel(app);
   const paginate = app.get('paginate');
 
   const options = {
+    Model,
     paginate
   };
 
