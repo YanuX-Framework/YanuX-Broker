@@ -41,8 +41,45 @@ function beforePatchAndUpdate(context) {
 }
 
 function afterCreateUpdatePatchAndRemove(context) {
+  // TODO: Implement proxemics notifications.
   console.log('After Create, Update, Patch and Removed Called');
-  // TODO: Implement proxemic notification events.
+  // Only run the "meat" of this hook for external requests!
+  if (context.params.provider) {
+    switch (context.method) {
+      case 'create':
+        context.app.service('events').create({
+          event: 'proxemics',
+          payload: {
+            userId: context.params.user.email,
+            deviceId: context.data.deviceId,
+            status: 'deviceSeen',
+          }
+        })
+        .then(event => {return;})
+        .catch(e => {throw e});
+        break;
+      case 'remove':
+        context.app.service('events').create({
+          event: 'proxemics',
+          payload: {
+            userId: context.params.user.email,
+            deviceId: context.params.query.deviceId,
+            status: 'deviceLost',
+          }
+        })
+        .then(event => {return;})
+        .catch(e => {throw e});
+        break;
+      case 'find':
+      case 'get':
+      case 'update':
+      case 'patch':
+      default:
+        break;
+    }
+  } else {
+    console.log('Internal Affairs');
+  }
 }
 
 module.exports = {

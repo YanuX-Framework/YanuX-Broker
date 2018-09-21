@@ -8,7 +8,11 @@
   "keywords": [
     "feathers"
   ],
-  "author": "Pedro Albuquerque Santos <pedro@albuquerques.net> (https://pedro.albuquerques.net)",
+  "author": {
+    "name": "Pedro Albuquerque Santos",
+    "email": "pedro@albuquerques.net",
+    "url": "https://pedro.albuquerques.net"
+  },
   "license": "AGPL-3.0",
   "contributors": [],
   "bugs": {},
@@ -28,14 +32,14 @@
     "mocha": "mocha test/ --recursive --exit"
   },
   "dependencies": {
-    "@feathersjs/authentication": "^2.1.10",
-    "@feathersjs/authentication-jwt": "^2.0.4",
-    "@feathersjs/authentication-local": "^1.2.4",
-    "@feathersjs/configuration": "^2.0.3",
-    "@feathersjs/errors": "^3.3.3",
-    "@feathersjs/express": "^1.2.6",
-    "@feathersjs/feathers": "^3.2.2",
-    "@feathersjs/socketio": "^3.2.5",
+    "@feathersjs/authentication": "^2.1.11",
+    "@feathersjs/authentication-jwt": "^2.0.5",
+    "@feathersjs/authentication-local": "^1.2.5",
+    "@feathersjs/configuration": "^2.0.4",
+    "@feathersjs/errors": "^3.3.4",
+    "@feathersjs/express": "^1.2.7",
+    "@feathersjs/feathers": "^3.2.3",
+    "@feathersjs/socketio": "^3.2.6",
     "compression": "^1.7.3",
     "cors": "^2.8.4",
     "debug": "^4.0.1",
@@ -44,7 +48,7 @@
     "helmet": "^3.13.0",
     "lodash": "^4.17.11",
     "mongodb": "^3.1.6",
-    "mongoose": "^5.2.15",
+    "mongoose": "^5.2.17",
     "passport-custom": "^1.0.5",
     "serve-favicon": "^2.5.0",
     "winston": "^3.1.0"

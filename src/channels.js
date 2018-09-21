@@ -46,7 +46,11 @@ module.exports = function (app) {
 
   // Publishing events from all events to the user specific channel.
   app.publish((data, context) => {
-    return app.channel(`user/${context.params.user.email}`);
+    if (context.params && context.params.user) {
+      return app.channel(`user/${context.params.user.email}`);
+    } else if (data.userId) {
+      return app.channel(`user/${data.userId}`);
+    }
   })
 
   // Here you can also add service specific event publishers
