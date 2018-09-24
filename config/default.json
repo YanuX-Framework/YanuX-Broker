@@ -1,6 +1,6 @@
 {
   "host": "localhost",
-  "port": 3030,
+  "port": 3002,
   "public": "../public/",
   "paginate": {
     "default": 10,
@@ -32,7 +32,7 @@
       "passwordField": "password"
     },
     "yanux": {
-      "url": "http://localhost:3000/api/verify_oauth2"
+      "url": "http://localhost:3001/api/verify_oauth2"
     }
   }
 }
