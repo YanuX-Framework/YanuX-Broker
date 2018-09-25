@@ -33,12 +33,20 @@ class YanuxVerifier {
 
     verify(req, done) {
         debug('Checking if the provided access token is valid');
+
         const accessTokenKey = this.options.accessTokenKey;
         const authorizationHeader = this.options.authorizationHeader
         const accessToken = req.body[accessTokenKey] || (req.headers[authorizationHeader] ? req.headers[authorizationHeader].replace('Bearer ', '') : null)
         if (typeof accessToken !== 'string') {
-            return done(new Error('The accessToken is missing from your authentication request.'));
+            return done(new Error('The Access Token is missing from your authentication request.'));
         }
+
+        const clientIdKey = this.options.clientIdKey;
+        const clientId = req.body[clientIdKey];
+        if (typeof clientId !== 'string') {
+            return done(new Error('The Client ID is missing from your authentication request.'));
+        }
+
         request.get(this.options.url, { 'auth': { 'bearer': accessToken } },
             (err, httpResponse, body) => {
                 if (err) {
@@ -46,7 +54,11 @@ class YanuxVerifier {
                 } else if (httpResponse.statusCode != 200) {
                     return done(new Error('The provided access token is not valid.'));
                 } else {
-                    const username = JSON.parse(body).response.user.email;
+                    const verification = JSON.parse(body);
+                    if (verification.response.client.id !== clientId) {
+                        return done(new Error('The Acess Token is not valid for the Client ID that you provided.'));
+                    }
+                    const username = verification.response.user.email;
                     const id = this.service.id;
                     const usernameField = this.options.entityUsernameField || this.options.usernameField;
                     const reqParams = omit(req.params, 'query', 'provider', 'headers', 'session', 'cookies');
@@ -73,11 +85,12 @@ class YanuxVerifier {
                                 return this._normalizeResult(response);
                             })
                             .then(entity => {
-                                const id = entity[this.service.id];
-                                const payload = { [`${this.options.entity}Id`]: id };
+                                const payload = {
+                                    [`${this.options.entity}Id`]: entity[this.service.id],
+                                    clientId
+                                };
                                 done(null, entity, payload);
                             }).catch(error => error ? done(error) : done(null, error, { message: 'Invalid login' }));
-                    
                     const user = {};
                     user[usernameField] = username;
                     this.service.create(user, reqParams)

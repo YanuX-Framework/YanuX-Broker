@@ -1,13 +1,14 @@
 const Debug = require('debug');
-const { merge, omit, pick } = require('lodash');
-const DefaultVerifier = require('./verifier');
+const debug = Debug('@yanux/broker:yanux-auth');
 
+const { merge, omit, pick } = require('lodash');
 const passportCustom = require('passport-custom');
 
-const debug = Debug('@yanux/broker:yanux-auth');
+const DefaultVerifier = require('./verifier');
 const defaults = {
     name: 'yanux',
     accessTokenKey: 'accessToken',
+    clientIdKey: 'clientId',
     authorizationHeader: 'authorization',
     usernameField: 'email'
 };
