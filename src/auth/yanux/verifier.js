@@ -2,16 +2,18 @@ const Debug = require('debug');
 const { omit } = require('lodash');
 const request = require('request');
 const debug = Debug('@feathersjs/authentication-local:yanux-auth:verify');
-const { Conflict } = require("@feathersjs/errors");
-
 
 class YanuxVerifier {
     constructor(app, options = {}) {
         this.app = app;
         this.options = options;
-        this.service = typeof options.service === 'string' ? app.service(options.service) : options.service;
-        if (!this.service) {
+        this.usersService = typeof options.service === 'string' ? app.service(options.service) : options.service;
+        if (!this.usersService) {
             throw new Error(`options.service does not exist.\n\tMake sure you are passing a valid service path or service instance and that it is initialized.`);
+        }
+        this.clientsService = typeof options.clientsService === 'string' ? app.service(options.clientsService) : options.clientsService;
+        if (!this.usersService) {
+            throw new Error(`options.clientsService does not exist.\n\tMake sure you are passing a valid service path or service instance and that it is initialized.`);
         }
         this._normalizeResult = this._normalizeResult.bind(this);
         this.verify = this.verify.bind(this);
@@ -41,6 +43,7 @@ class YanuxVerifier {
             return done(new Error('The Access Token is missing from your authentication request.'));
         }
 
+        const clientIdField = this.options.clientIdField;
         const clientIdKey = this.options.clientIdKey;
         const clientId = req.body[clientIdKey];
         if (typeof clientId !== 'string') {
@@ -59,49 +62,64 @@ class YanuxVerifier {
                         return done(new Error('The Acess Token is not valid for the Client ID that you provided.'));
                     }
                     const username = verification.response.user.email;
-                    const id = this.service.id;
+                    const id = this.usersService.id;
+                    if (id === null || id === undefined) {
+                        debug('failed: the service.id was not set');
+                        return done(new Error('the `id` property must be set on the entity service for authentication'));
+                    }
+
                     const usernameField = this.options.entityUsernameField || this.options.usernameField;
                     const reqParams = omit(req.params, 'query', 'provider', 'headers', 'session', 'cookies');
-                    const params = Object.assign({
+
+                    const userParams = Object.assign({
                         'query': {
                             [usernameField]: username,
                             '$limit': 1
                         }
                     }, reqParams);
 
-                    if (id === null || id === undefined) {
-                        debug('failed: the service.id was not set');
-                        return done(new Error('the `id` property must be set on the entity service for authentication'));
-                    }
+                    const clientParams = Object.assign({
+                        'query': {
+                            [clientIdField]: clientId,
+                            '$limit': 1
+                        }
+                    }, reqParams);
 
-                    const authenticationService = () =>
-                        // Look up the entity
-                        this.service.find(params)
-                            .then(response => {
-                                const results = response.data || response;
-                                if (!results.length) {
-                                    debug(`a record with ${usernameField} of '${username}' did not exist`);
-                                }
-                                return this._normalizeResult(response);
-                            })
-                            .then(entity => {
-                                const payload = {
-                                    [`${this.options.entity}Id`]: entity[this.service.id],
-                                    clientId
-                                };
-                                done(null, entity, payload);
-                            }).catch(error => error ? done(error) : done(null, error, { message: 'Invalid login' }));
-                    const user = {};
-                    user[usernameField] = username;
-                    this.service.create(user, reqParams)
-                        .then(authenticationService)
-                        .catch(err => {
-                            if (!(err instanceof Conflict)) {
-                                done(err);
-                            } else {
-                                return authenticationService();
-                            }
-                        });
+                    Promise.all([
+                        this.usersService.find(userParams),
+                        this.clientsService.find(clientParams)
+                    ]).then(responses => {
+                        const promises = [];
+                        const userResults = responses[0].data || responses[0];
+                        const clientResults = responses[1].data || responses[1];
+                        if (!userResults.length) {
+                            promises.push(this.usersService.create({
+                                [usernameField]: username
+                            }));
+                        } else {
+                            promises.push(this._normalizeResult(userResults));
+                        }
+                        if (!clientResults.length) {
+                            promises.push(this.clientsService.create({
+                                [clientIdField]: clientId
+                            }));
+                        } else {
+                            promises.push(this._normalizeResult(clientResults));
+                        }
+                        return Promise.all(promises);
+                    }).then(entities => {
+                        const payload = {
+                            [`${this.options.entity}Id`]: entities[0][this.usersService.id],
+                            [clientIdKey]: entities[1][this.clientsService.id]
+                        };
+                        done(null, entities[0], payload);
+                    }).catch(error => {
+                        if(error){
+                            done(error)
+                        } else {
+                            done(null, error, { message: 'Invalid login' });
+                        }
+                    });
                 }
             });
     }

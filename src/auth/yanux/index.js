@@ -7,10 +7,12 @@ const passportCustom = require('passport-custom');
 const DefaultVerifier = require('./verifier');
 const defaults = {
     name: 'yanux',
-    accessTokenKey: 'accessToken',
+    usernameField: 'email',
+    clientsService: 'clients',
+    clientIdField: 'id',
     clientIdKey: 'clientId',
-    authorizationHeader: 'authorization',
-    usernameField: 'email'
+    accessTokenKey: 'accessToken',
+    authorizationHeader: 'authorization'
 };
 
 const KEYS = [
