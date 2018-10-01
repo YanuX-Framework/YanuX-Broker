@@ -13,9 +13,9 @@ const checkOwnership = context => entity => {
         return true;
     }
     //External call, if it didn't pass the checks above the access should be blocked.
-    if(context.params.provider) {
+    if (context.params.provider) {
         return false;
-    //It should be an internal method, so allow access anyway.
+        //It should be an internal method, so allow access anyway.
     } else {
         return true;
     }
@@ -46,16 +46,17 @@ module.exports.canWriteEntity = context => {
             } else if (context.params.query
                 && checker(context.params.query)) {
                 /**
-                 * NOTE: At this point I could probably just set promise = Promise.resolve(true).
-                 * The extra database query is should really be unnecessary and I may remove it
+                 * NOTE: At this point I can probably just set promise = Promise.resolve(true).
+                 * The extra database query should be unnecessary and I'm commenting it out to
                  * just to potentially save a couple of milliseconds.
                  */
-                promise = context.service
+                promise = Promise.resolve(true);
+                /*promise = context.service
                     .find({ query: context.params.query })
                     .then(entities => {
                         const results = entities.data ? entities.data : entities;
                         return results.every(checker);
-                    });
+                    });*/
             }
             promise.then(isOwner => {
                 if (isOwner) {
