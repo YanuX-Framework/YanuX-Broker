@@ -1,21 +1,21 @@
 const { authenticate } = require('@feathersjs/authentication').hooks;
-const checkEntityRead = require('../../hooks/authorization').checkEntityRead
-const checkEntityOwnership = require('../../hooks/authorization').checkEntityOwnership
+const canReadEntity = require('../../hooks/authorization').canReadEntity
+const canWriteEntity = require('../../hooks/authorization').canWriteEntity
 
 module.exports = {
   before: {
     all: [authenticate('jwt')],
     find: [],
     get: [],
-    create: [checkEntityOwnership],
-    update: [checkEntityOwnership],
-    patch: [checkEntityOwnership],
-    remove: [checkEntityOwnership]
+    create: [canWriteEntity],
+    update: [canWriteEntity],
+    patch: [canWriteEntity],
+    remove: [canWriteEntity]
   },
   after: {
     all: [],
-    find: [checkEntityRead],
-    get: [checkEntityRead],
+    find: [canReadEntity],
+    get: [canReadEntity],
     create: [],
     update: [],
     patch: [],
