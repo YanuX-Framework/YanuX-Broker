@@ -3,14 +3,14 @@ const { authenticate } = require('@feathersjs/authentication').hooks;
 function beforeCreate(context) {
   if (context.params.user
     && context.data.beaconKey
-    && context.data.deviceId) {
+    && context.data.deviceUuid) {
     const user = context.params.user;
     const beaconkey = context.data.beaconKey;
-    const deviceId = context.data.deviceId;
+    const deviceUuid = context.data.deviceUuid;
     return this.remove(null, {
       query: {
         user: user._id,
-        deviceId: deviceId,
+        deviceUuid: deviceUuid,
         beaconKey: beaconkey
       }
     }).then(beacon => {
@@ -51,7 +51,7 @@ function afterCreateUpdatePatchAndRemove(context) {
           event: 'proxemics',
           payload: {
             userId: context.params.user.email,
-            deviceId: context.data.deviceId,
+            deviceUuid: context.data.deviceUuid,
             status: 'deviceSeen',
           }
         })
@@ -63,7 +63,7 @@ function afterCreateUpdatePatchAndRemove(context) {
           event: 'proxemics',
           payload: {
             userId: context.params.user.email,
-            deviceId: context.params.query.deviceId,
+            deviceUuid: context.params.query.deviceUuid,
             status: 'deviceLost',
           }
         })

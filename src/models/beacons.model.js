@@ -8,12 +8,12 @@ module.exports = function (app) {
   const beacons = new Schema({
     beaconKey: {type: String, required: true },
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    deviceId: {type: String, required: true },
+    deviceUuid: {type: String, required: true },
     beacon: { type: Object, required: true }
   }, {
     timestamps: true
   });
-  beacons.index({beaconKey: 1, deviceId: 1}, {unique: true});
+  beacons.index({beaconKey: 1, deviceUuid: 1}, {unique: true});
 
   return mongooseClient.model('beacons', beacons);
 };

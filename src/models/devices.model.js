@@ -6,10 +6,8 @@ module.exports = function (app) {
   const mongooseClient = app.get('mongooseClient');
   const { Schema } = mongooseClient;
   const devices = new Schema({
-    deviceUuid: { type: String, required: true }
-  }, {
-      timestamps: true
-    });
-
+    deviceUuid: { type: String, required: true, unique: true },
+    status: { type: String, required: true }
+  }, { timestamps: true });
   return mongooseClient.model('devices', devices);
 };

@@ -20,7 +20,7 @@ module.exports = function (app) {
       // Add it to the authenticated user channel
       app.channel('authenticated').join(connection);
       // Add the user to a its specific channel
-      app.channel(`user/${user.email}`).join(connection);
+      app.channel(`users/${user.email}`).join(connection);
 
       // Channels can be named anything and joined on any condition 
       // E.g. to send real-time events only to admins use
@@ -47,9 +47,9 @@ module.exports = function (app) {
   // Publishing events from all events to the user specific channel.
   app.publish((data, context) => {
     if (context.params && context.params.user) {
-      return app.channel(`user/${context.params.user.email}`);
+      return app.channel(`users/${context.params.user.email}`);
     } else if (data.userId) {
-      return app.channel(`user/${data.userId}`);
+      return app.channel(`users/${data.userId}`);
     }
   })
 
