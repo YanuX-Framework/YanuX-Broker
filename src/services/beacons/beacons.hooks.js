@@ -15,28 +15,34 @@ function beforeCreate(context) {
       }
     }).then(beacon => {
       return context;
-    }).catch(e => {
-      throw e;
-    });
+    }).catch(e => { throw e; });
   }
 }
 
 function beforePatchAndUpdate(context) {
-  if (context.data.beacon
-    && context.params.query) {
+  if (context.data &&
+    context.data.beacon &&
+    context.params.query) {
     const beacon = context.data.beacon;
     const query = context.params.query;
     return this.find({ query: query, paginate: false })
       .then(beacons => {
-        if (beacons.every(b => beacon.timestamp > b.beacon.timestamp)) {
+        if (!beacons.length) {
+          context.service.create({
+            user: context.data.user || context.params.query.user,
+            deviceUuid: context.data.deviceUuid || context.params.query.deviceUuid,
+            beaconKey: context.data.beaconKey || context.params.query.beaconKey,
+            beacon: beacon
+          }).then(data => {
+            context.result = [data];
+            return context;
+          }).catch(e => { throw e; });
+        } else if (beacons.every(b => beacon.timestamp > b.beacon.timestamp)) {
           return context;
         } else {
           throw new Error('The new beacon\'s timestamp is older than the one(s) already stored.');
         }
-      })
-      .catch(e => {
-        throw e
-      });
+      }).catch(e => { throw e; });
   }
 }
 
@@ -54,9 +60,8 @@ function afterCreateUpdatePatchAndRemove(context) {
             deviceUuid: context.data.deviceUuid,
             status: 'deviceSeen',
           }
-        })
-        .then(event => {return;})
-        .catch(e => {throw e});
+        }).then(e => { return context; })
+          .catch(e => { throw e; });
         break;
       case 'remove':
         context.app.service('events').create({
@@ -66,9 +71,8 @@ function afterCreateUpdatePatchAndRemove(context) {
             deviceUuid: context.params.query.deviceUuid,
             status: 'deviceLost',
           }
-        })
-        .then(event => {return;})
-        .catch(e => {throw e});
+        }).then(e => { return context; })
+          .catch(e => { throw e; });
         break;
       case 'find':
       case 'get':
@@ -78,8 +82,9 @@ function afterCreateUpdatePatchAndRemove(context) {
         break;
     }
   } else {
-    console.log('Internal Affairs');
+    console.log('Internal Request');
   }
+  return context;
 }
 
 module.exports = {
