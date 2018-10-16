@@ -39,6 +39,7 @@
     "@feathersjs/errors": "^3.3.4",
     "@feathersjs/express": "^1.2.7",
     "@feathersjs/feathers": "^3.2.3",
+    "@feathersjs/primus": "^3.2.5",
     "@feathersjs/socketio": "^3.2.6",
     "compression": "^1.7.3",
     "cors": "^2.8.4",
@@ -50,10 +51,11 @@
     "lodash": "^4.17.11",
     "mongodb": "^3.1.8",
     "mongodb-core": "^3.1.7",
-    "mongoose": "^5.3.3",
+    "mongoose": "^5.3.4",
     "passport-custom": "^1.0.5",
     "serve-favicon": "^2.5.0",
-    "winston": "^3.1.0"
+    "winston": "^3.1.0",
+    "ws": "^6.1.0"
   },
   "devDependencies": {
     "ajv": "^6.5.4",

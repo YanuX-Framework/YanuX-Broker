@@ -1,5 +1,3 @@
-const feathersSocketio = require('@feathersjs/socketio')
-
 module.exports = function (app) {
   if (typeof app.channel !== 'function') {
     // If no real-time functionality has been configured just return
@@ -20,7 +18,7 @@ module.exports = function (app) {
       // The connection is no longer anonymous, remove it
       app.channel('anonymous').leave(connection);
       // Add it to the authenticated user channel
-      app.channel('authenticated').join(connection);
+      app.channel('authenticated', 'users').join(connection);
       // Add the user to a its specific channel
       app.channel(`users/${user.email}`).join(connection);
 
@@ -28,12 +26,14 @@ module.exports = function (app) {
        * TODO: Assess if this is actually a good idea.
        * I should also check if this works with Primus and other socket adapters.
        */
+      /*
       if(connection.provider === 'socketio') {
         const socketioConn = connection[feathersSocketio.SOCKET_KEY];
         socketioConn.on('disconnect', () => {
           console.log('On disconnect');
         })
       }
+      */
 
       // Channels can be named anything and joined on any condition 
       // E.g. to send real-time events only to admins use
@@ -46,10 +46,6 @@ module.exports = function (app) {
       // app.channel(`emails/${user.email}`).join(channel);
       // app.channel(`userIds/$(user.id}`).join(channel);
     }
-  });
-
-  app.on('removeListener', (event, listener) => {
-    console.log('Event Removed');
   });
 
   // eslint-disable-next-line no-unused-vars

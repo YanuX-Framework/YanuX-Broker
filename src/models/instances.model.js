@@ -9,10 +9,10 @@ module.exports = function (app) {
   const instances = new Schema({
     user: { type: Schema.Types.ObjectId, ref: 'users', required: true },
     client: { type: Schema.Types.ObjectId, ref: 'clients', required: true },
-    deviceUuid: { type: String, required: true, unique: true },
+    device: { type: Schema.Types.ObjectId, ref: 'devices', required: true },
   }, { timestamps: true });
 
-  instances.index({ user: 1, client: 1, deviceUuid: 1 }, { unique: true });
+  instances.index({ user: 1, client: 1, device: 1 }, { unique: true });
 
   return mongooseClient.model('instances', instances);
 };
