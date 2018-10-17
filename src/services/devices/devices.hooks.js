@@ -14,12 +14,13 @@ function afterPatch(context) {
       const deviceChannel = context.app.channel(`devices/${context.params.query.deviceUuid}`)
       deviceChannel.join(context.params.connection);
     }
-    if (!context.result.length)
+    if (!context.result.length) {
       return context.service.create(context.data)
         .then(device => {
           context.result = [device];
           return context;
         }).catch(e => { throw e });
+    }
   }
 }
 

@@ -7,7 +7,13 @@ module.exports = function (app) {
   const { Schema } = mongooseClient;
   const devices = new Schema({
     deviceUuid: { type: String, required: true, unique: true },
-    beaconIdValues: { type: Array, required: true }
+    beaconValues: { type: Array },
+    /**
+     * TODO:
+     * Come up with a Capabilities Model that can be used for automatic user interface adaptation.
+     * For now, I'll just leave as a "mixed" type.
+     */
+    capabilities: { type: Schema.Types.Mixed }
   }, { timestamps: true });
   return mongooseClient.model('devices', devices);
 };

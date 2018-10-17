@@ -58,7 +58,8 @@ function afterCreateUpdatePatchAndRemove(context) {
           payload: {
             userId: context.params.user.email,
             deviceUuid: context.data.deviceUuid,
-            status: 'deviceSeen',
+            type: 'beaconSeen',
+            data: context.data
           }
         }).then(e => { return context; })
           .catch(e => { throw e; });
@@ -69,7 +70,8 @@ function afterCreateUpdatePatchAndRemove(context) {
           payload: {
             userId: context.params.user.email,
             deviceUuid: context.params.query.deviceUuid,
-            status: 'deviceLost',
+            type: 'beaconLost',
+            data: context.result[0]
           }
         }).then(e => { return context; })
           .catch(e => { throw e; });
@@ -79,12 +81,12 @@ function afterCreateUpdatePatchAndRemove(context) {
       case 'update':
       case 'patch':
       default:
-        break;
+        return context;
     }
   } else {
     console.log('Internal Request');
+    return context;
   }
-  return context;
 }
 
 module.exports = {
