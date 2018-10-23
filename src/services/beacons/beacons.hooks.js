@@ -50,31 +50,70 @@ function afterCreateUpdatePatchAndRemove(context) {
   // TODO: Implement proxemics notifications.
   console.log('After Create, Update, Patch and Removed Called');
   // Only run the "meat" of this hook for external requests!
-  if (context.params.provider) {
+  if (context.params.provider &&
+    context.params.payload &&
+    context.params.payload.userId &&
+    context.params.payload.clientId) {
     switch (context.method) {
       case 'create':
-        context.app.service('events').create({
-          event: 'proxemics',
-          payload: {
-            userId: context.params.user.email,
-            deviceUuid: context.data.deviceUuid,
-            type: 'beaconSeen',
-            data: context.data
+        Promise.all([
+          context.app.service('devices').find({ query: { deviceUuid: context.data.deviceUuid } }),
+          context.app.service('devices').find({ query: { $limit: 1, beaconValues: { $in: context.data.beacon.values } } })
+        ]).then(devices => {
+          const scanningDevice = (devices[0].data ? devices[0].data : devices[0])[0];
+          const detectedDevice = (devices[1].data ? devices[1].data : devices[1])[0];
+          if (scanningDevice && scanningDevice._id.equals(detectedDevice._id)) {
+            return context;
+          } else {
+            return Promisse.all([
+              context.app.service('instances').find({
+                query: {
+                  user: context.params.payload.userId,
+                  client: context.params.payload.clientId,
+                  device: scanningDevice._id
+                }
+              }),
+              context.app.service('instances').find({
+                query: {
+                  user: context.params.payload.userId,
+                  client: context.params.payload.clientId,
+                  device: detectedDevice._id
+                }
+              })
+            ]);
+            /*return context.app.service('events').create({
+              event: 'proxemics',
+              payload: {
+                userId: context.params.user.email,
+                deviceUuid: context.data.deviceUuid,
+                type: 'deviceSeen',
+                data: detectedDevice
+              }
+            });*/
           }
-        }).then(e => { return context; })
-          .catch(e => { throw e; });
+        }).then(instances => {
+          
+          return context;
+        });
         break;
       case 'remove':
-        context.app.service('events').create({
-          event: 'proxemics',
-          payload: {
-            userId: context.params.user.email,
-            deviceUuid: context.params.query.deviceUuid,
-            type: 'beaconLost',
-            data: context.result[0]
-          }
-        }).then(e => { return context; })
-          .catch(e => { throw e; });
+        if (context.result && context.result.length > 0) {
+          context.app.service('devices').find({ query: { $limit: 1, beaconValues: { $in: context.result[0].beacon.values } } })
+            .then(results => {
+              const device = (results.data ? results.data : results)[0];
+              if (device) {
+                return context.app.service('events').create({
+                  event: 'proxemics',
+                  payload: {
+                    userId: context.params.user.email,
+                    deviceUuid: context.params.query.deviceUuid,
+                    type: 'deviceLost',
+                    data: device
+                  }
+                });
+              }
+            }).then(() => { return context; }).catch(e => { throw e; });
+        }
         break;
       case 'find':
       case 'get':

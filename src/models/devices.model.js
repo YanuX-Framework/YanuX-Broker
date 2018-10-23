@@ -13,7 +13,7 @@ module.exports = function (app) {
      * Come up with a Capabilities Model that can be used for automatic user interface adaptation.
      * For now, I'll just leave as a "mixed" type.
      */
-    capabilities: { type: Schema.Types.Mixed }
+    capabilities: { type: Schema.Types.Mixed },
   }, { timestamps: true });
   return mongooseClient.model('devices', devices);
 };
