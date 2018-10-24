@@ -52,61 +52,52 @@ function afterCreateUpdatePatchAndRemove(context) {
   // Only run the "meat" of this hook for external requests!
   if (context.params.provider &&
     context.params.payload &&
-    context.params.payload.userId &&
-    context.params.payload.clientId) {
+    context.params.payload.userId) {
     switch (context.method) {
       case 'create':
-        Promise.all([
-          context.app.service('devices').find({ query: { deviceUuid: context.data.deviceUuid } }),
-          context.app.service('devices').find({ query: { $limit: 1, beaconValues: { $in: context.data.beacon.values } } })
+        const deviceUuid = context.data.deviceUuid;
+        const beacon = context.data.beacon;
+        return Promise.all([
+          context.app.service('devices').find({ query: { $limit: 1, deviceUuid: deviceUuid } }),
+          context.app.service('devices').find({ query: { $limit: 1, beaconValues: { $in: beacon.values } } })
         ]).then(devices => {
           const scanningDevice = (devices[0].data ? devices[0].data : devices[0])[0];
           const detectedDevice = (devices[1].data ? devices[1].data : devices[1])[0];
-          if (scanningDevice && scanningDevice._id.equals(detectedDevice._id)) {
-            return context;
-          } else {
-            return Promisse.all([
-              context.app.service('instances').find({
-                query: {
-                  user: context.params.payload.userId,
-                  client: context.params.payload.clientId,
-                  device: scanningDevice._id
-                }
-              }),
-              context.app.service('instances').find({
-                query: {
-                  user: context.params.payload.userId,
-                  client: context.params.payload.clientId,
-                  device: detectedDevice._id
-                }
-              })
-            ]);
-            /*return context.app.service('events').create({
-              event: 'proxemics',
-              payload: {
-                userId: context.params.user.email,
-                deviceUuid: context.data.deviceUuid,
-                type: 'deviceSeen',
-                data: detectedDevice
-              }
-            });*/
+          if (!scanningDevice || !detectedDevice) {
+            // If either of the devices is missing from the database it's either an error or there's nothing to do with them.
+            throw new Error('Either the scanning device or the detected device are absent from the database.');
+          } else if (!scanningDevice._id.equals(detectedDevice._id)) {
+            // It's natural that the scanning device is able to detect itself whenever you're using "external beacons".
+            // This is the interesting situation. Both the devices are in the database and the scanning device is detecting a different device.
+            return context.app.service('beacons').find({ query: { $limit: 1, deviceUuid: detectedDevice.deviceUuid, 'beacon.values': { $in: scanningDevice.beaconValues } } })
           }
-        }).then(instances => {
-          
-          return context;
-        });
-        break;
+        }).then(result => {
+          return context.app.service('events').create({
+            event: 'proxemics',
+            payload: {
+              to: {
+                userId: context.params.user.email,
+                deviceUuid: scanningDevice.deviceUuid
+              },
+              deviceUuid: detectedDevice.deviceUuid,
+              type: 'deviceFound',
+              beacon: context.data.beacon
+            }
+          });
+        }).then(() => { return context; }).catch(e => { throw e; });
       case 'remove':
         if (context.result && context.result.length > 0) {
-          context.app.service('devices').find({ query: { $limit: 1, beaconValues: { $in: context.result[0].beacon.values } } })
+          return context.app.service('devices').find({ query: { $limit: 1, beaconValues: { $in: context.result[0].beacon.values } } })
             .then(results => {
               const device = (results.data ? results.data : results)[0];
               if (device) {
                 return context.app.service('events').create({
                   event: 'proxemics',
                   payload: {
-                    userId: context.params.user.email,
-                    deviceUuid: context.params.query.deviceUuid,
+                    to: {
+                      userId: context.params.user.email,
+                      deviceUuid: context.params.query.deviceUuid,
+                    },
                     type: 'deviceLost',
                     data: device
                   }
@@ -117,8 +108,6 @@ function afterCreateUpdatePatchAndRemove(context) {
         break;
       case 'find':
       case 'get':
-      case 'update':
-      case 'patch':
       default:
         return context;
     }

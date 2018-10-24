@@ -22,19 +22,6 @@ module.exports = function (app) {
       // Add the user to a its specific channel
       app.channel(`users/${user.email}`).join(connection);
 
-      /** 
-       * TODO: Assess if this is actually a good idea.
-       * I should also check if this works with Primus and other socket adapters.
-       */
-      /*
-      if(connection.provider === 'socketio') {
-        const socketioConn = connection[feathersSocketio.SOCKET_KEY];
-        socketioConn.on('disconnect', () => {
-          console.log('On disconnect');
-        })
-      }
-      */
-
       // Channels can be named anything and joined on any condition 
       // E.g. to send real-time events only to admins use
       // if(user.isAdmin) { app.channel('admins').join(connection); }
@@ -57,14 +44,47 @@ module.exports = function (app) {
     return app.channel('authenticated');
   }); */
 
-  // Publishing events from all events to the user specific channel.
-  app.publish((data, context) => {
-    if (context.params && context.params.user) {
+
+  const genericPublish = (data, context) => {
+    if (data.to) {
+      if (data.to.channel) {
+        return app.channel(data.channel);
+      } else if (data.to.userId && data.to.deviceUuid && data.to.instanceUuid) {
+        return app.channel(`users/${data.to.userId}/devices/${data.to.deviceUuid}/instances/${data.to.instanceUuid}`);
+      } else if (data.to.userId && data.to.instanceUuid) {
+        return app.channel(`users/${data.to.userId}/instances/${data.to.instanceUuid}`);
+      } else if (data.to.userId && data.to.deviceUuid) {
+        return app.channel(`users/${data.to.userId}/devices/${data.to.deviceUuid}`);
+      } else if (data.to.instanceUuid) {
+        return app.channel(`instances/${data.to.instanceUuid}`);
+      } else if (data.to.userId && data.to.deviceUuid) {
+        return app.channel(`users/${data.to.userId}/devices/${data.to.deviceUuid}`);
+      } else if (data.to.userId) {
+        return app.channel(`users/${data.to.userId}`);
+      } else if (data.to.deviceUuid) {
+        return app.channel(`devices/${data.to.deviceUuid}`);
+      }
+    } else if (context.params && context.params.user) {
       return app.channel(`users/${context.params.user.email}`);
-    } else if (data.userId) {
-      return app.channel(`users/${data.userId}`);
     }
+  };
+
+  app.on('logout', (authResult, { connection }) => {
+    app.channel(app.channels).leave(connection);
+    app.channel('anonymous').join(connection);
   })
+
+  // Publishing events from all events to the user specific channel.
+  app.publish(genericPublish);
+  /*
+  app.service('users').publish(genericPublish);
+  app.service('clients').publish(genericPublish);
+  app.service('events').publish(genericPublish);
+  app.service('resources').publish(genericPublish);
+  app.service('beacons').publish(genericPublish);
+  app.service('instances').publish(genericPublish);
+  app.service('devices').publish(genericPublish);
+  */
 
   // Here you can also add service specific event publishers
   // e.g. the publish the `users` service `created` event to the `admins` channel

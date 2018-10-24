@@ -19,6 +19,8 @@ module.exports = function (app) {
   app.configure(resources);
   // IPS Services
   // - Beacons service
+  // - Instances service
+  // - Devices service
   app.configure(beacons);
   app.configure(instances);
   app.configure(devices);
