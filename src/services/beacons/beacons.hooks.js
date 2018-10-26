@@ -50,14 +50,13 @@ function proxemics(context) {
   if (context.type !== 'after') {
     throw new Error('This must be run as an \'after\' hook.')
   }
-  // TODO: Implement proxemics notifications.
-  console.log('Proxemics');
+  // TODO: **FINISH** implementing proxemics notifications.
   // Only run the "meat" of this hook for external requests!
   if (context.params.provider) {
     let scanningDevice, detectedDevice;
     switch (context.method) {
       case 'create':
-        /* case 'patch': */
+      case 'patch':
         const deviceUuid = context.data.deviceUuid || context.params.query.deviceUuid;
         const detectedBeacon = context.data.beacon;
         return Promise.all([
@@ -69,63 +68,97 @@ function proxemics(context) {
           if (!scanningDevice || !detectedDevice) {
             // If either of the devices is missing from the database it's either an error or there's nothing to do with them.
             throw new Error('Either the scanning device or the detected device are absent from the database.');
-          } else if (scanningDevice._id.equals(detectedDevice._id)) {
+          } else if (!scanningDevice._id.equals(detectedDevice._id)) {
             // It's natural that the scanning device is able to detect itself whenever you're using "external beacons".
-            throw new Error('It\'s natural that the scanning device is capable of detecting itself.')
-          } else {
             // This is the interesting situation. Both devices are in the database and the scanning device is detecting a different device.
             // Moreover, check if the detected device is also detecting the scanned device.
             return context.app.service('beacons').find({
               query: {
-                /* $limit: 1,
-                deviceUuid: detectedDevice.deviceUuid, */
+                $limit: 1,
+                deviceUuid: detectedDevice.deviceUuid,
                 'beacon.values': scanningDevice.beaconValues
               }
             })
           }
         }).then(result => {
-          const beacons = result.data ? result.data : result;
-          const promises = [];
-          beacons.forEach(beacon => {
-            promises.push(context.app.service('events').create({
-              event: 'proxemics',
-              payload: {
-                to: {
-                  userId: context.params.user.email,
-                  deviceUuid: beacon.deviceUuid
-                },
-                type: 'enter',
-                scanedDeviceUuid: scanningDevice.deviceUuid,
-                detectedDeviceUuid: detectedDevice.deviceUuid,
-                beacon: context.data.beacon
+          if (result) {
+            const beacon = (result.data ? result.data : result)[0];
+            if (beacon) {
+              let eventTemplate = {
+                event: 'proxemics',
+                payload: {
+                  to: { userId: context.params.user.email },
+                  type: 'enter',
+                  scanningDevice: scanningDevice,
+                  detectedDevice: detectedDevice,
+                }
               }
-            }));
-            return Promise.all(promises);
-          });
+              if(context.method === 'patch') {
+                eventTemplate.payload.type = 'staying';
+              }
+              let scanningDeviceEvent = JSON.parse(JSON.stringify(eventTemplate));
+              scanningDeviceEvent.payload.to.deviceUuid = scanningDevice.deviceUuid;
+              let detectedDeviceEvent = JSON.parse(JSON.stringify(eventTemplate));
+              detectedDeviceEvent.payload.to.deviceUuid = detectedDevice.deviceUuid;
+              return Promise.all([
+                context.app.service('events').create(scanningDeviceEvent),
+                context.app.service('events').create(detectedDeviceEvent)
+              ]);
+            }
+          }
         }).then(() => { return context; }).catch(e => { throw e; });
-      /*
       case 'remove':
         if (context.result && context.result.length > 0) {
-          return context.app.service('devices').find({ query: { $limit: 1, beaconValues: { $in: context.result[0].beacon.values } } })
-            .then(results => {
-              const device = (results.data ? results.data : results)[0];
-              if (device) {
-                return context.app.service('events').create({
-                  event: 'proxemics',
-                  payload: {
-                    to: {
-                      userId: context.params.user.email,
-                      deviceUuid: context.params.query.deviceUuid,
-                    },
-                    type: 'exit',
-                    data: device
-                  }
-                });
+          const deviceUuid = context.result[0].deviceUuid || context.params.query.deviceUuid;
+          const detectedBeacon = context.result[0].beacon;
+          return Promise.all([
+            context.app.service('devices').find({ query: { $limit: 1, deviceUuid: deviceUuid } }),
+            context.app.service('devices').find({ query: { $limit: 1, beaconValues: detectedBeacon.values } })
+          ]).then(devices => {
+            scanningDevice = (devices[0].data ? devices[0].data : devices[0])[0];
+            detectedDevice = (devices[1].data ? devices[1].data : devices[1])[0];
+            if (!scanningDevice || !detectedDevice) {
+              // If either of the devices is missing from the database it's either an error or there's nothing to do with them.
+              throw new Error('Either the scanning device or the detected device are absent from the database.');
+            } else if (!scanningDevice._id.equals(detectedDevice._id)) {
+              // It's natural that the scanning device is able to detect itself whenever you're using "external beacons".
+              // This is the interesting situation. Both devices are in the database and the scanning device is detecting a different device.
+              // Moreover, check if the detected device is also detecting the scanned device.
+              return context.app.service('beacons').find({
+                query: {
+                  $limit: 1,
+                  deviceUuid: detectedDevice.deviceUuid,
+                  'beacon.values': scanningDevice.beaconValues
+                }
+              })
+            }
+          }).then(result => {
+            if (result) {
+              const beacon = (result.data ? result.data : result)[0];
+              let eventTemplate = {
+                event: 'proxemics',
+                payload: {
+                  to: { userId: context.params.user.email },
+                  type: 'exit',
+                  scanningDevice: scanningDevice,
+                  detectedDevice: detectedDevice,
+                }
               }
-            }).then(() => { return context; }).catch(e => { throw e; });
+              if (beacon) {
+                eventTemplate.payload.type = 'leaving';
+              }
+              let scanningDeviceEvent = JSON.parse(JSON.stringify(eventTemplate));
+              let detectedDeviceEvent = JSON.parse(JSON.stringify(eventTemplate));
+              scanningDeviceEvent.payload.to.deviceUuid = scanningDevice.deviceUuid;
+              detectedDeviceEvent.payload.to.deviceUuid = detectedDevice.deviceUuid;
+              return Promise.all([
+                context.app.service('events').create(scanningDeviceEvent),
+                context.app.service('events').create(detectedDeviceEvent)
+              ]);
+            }
+          }).then(() => { return context; }).catch(e => { throw e; });
         }
         break;
-        */
       default:
         return context;
     }
