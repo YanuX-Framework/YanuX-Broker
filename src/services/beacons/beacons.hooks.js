@@ -46,45 +46,63 @@ function beforePatchAndUpdate(context) {
   }
 }
 
-function afterCreateUpdatePatchAndRemove(context) {
+function proxemics(context) {
+  if (context.type !== 'after') {
+    throw new Error('This must be run as an \'after\' hook.')
+  }
   // TODO: Implement proxemics notifications.
-  console.log('After Create, Update, Patch and Removed Called');
+  console.log('Proxemics');
   // Only run the "meat" of this hook for external requests!
-  if (context.params.provider &&
-    context.params.payload &&
-    context.params.payload.userId) {
+  if (context.params.provider) {
+    let scanningDevice, detectedDevice;
     switch (context.method) {
       case 'create':
-        const deviceUuid = context.data.deviceUuid;
-        const beacon = context.data.beacon;
+      case 'patch':
+        const deviceUuid = context.data.deviceUuid || context.params.query.deviceUuid;
+        const detectedBeacon = context.data.beacon;
         return Promise.all([
           context.app.service('devices').find({ query: { $limit: 1, deviceUuid: deviceUuid } }),
-          context.app.service('devices').find({ query: { $limit: 1, beaconValues: { $in: beacon.values } } })
+          context.app.service('devices').find({ query: { $limit: 1, beaconValues: detectedBeacon.values } })
         ]).then(devices => {
-          const scanningDevice = (devices[0].data ? devices[0].data : devices[0])[0];
-          const detectedDevice = (devices[1].data ? devices[1].data : devices[1])[0];
+          scanningDevice = (devices[0].data ? devices[0].data : devices[0])[0];
+          detectedDevice = (devices[1].data ? devices[1].data : devices[1])[0];
           if (!scanningDevice || !detectedDevice) {
             // If either of the devices is missing from the database it's either an error or there's nothing to do with them.
             throw new Error('Either the scanning device or the detected device are absent from the database.');
-          } else if (!scanningDevice._id.equals(detectedDevice._id)) {
+          } else if (scanningDevice._id.equals(detectedDevice._id)) {
             // It's natural that the scanning device is able to detect itself whenever you're using "external beacons".
-            // This is the interesting situation. Both the devices are in the database and the scanning device is detecting a different device.
-            return context.app.service('beacons').find({ query: { $limit: 1, deviceUuid: detectedDevice.deviceUuid, 'beacon.values': { $in: scanningDevice.beaconValues } } })
+            throw new Error('It\'s natural that the scanning device is capable of detecting itself.')
+          } else {
+            // This is the interesting situation. Both devices are in the database and the scanning device is detecting a different device.
+            // Moreover, check if the detected device is also detecting the scanned device.
+            return context.app.service('beacons').find({
+              query: {
+                $limit: 1,
+                deviceUuid: detectedDevice.deviceUuid,
+                'beacon.values': scanningDevice.beaconValues
+              }
+            })
           }
-        }).then(result => {
-          return context.app.service('events').create({
-            event: 'proxemics',
-            payload: {
-              to: {
-                userId: context.params.user.email,
-                deviceUuid: scanningDevice.deviceUuid
-              },
-              deviceUuid: detectedDevice.deviceUuid,
-              type: 'deviceFound',
-              beacon: context.data.beacon
-            }
-          });
+        }).then(beacons => {
+          const beacon = (beacons.data ? beacons.data : beacons)[0];
+          // Check if the scanning device's beacon has been detected by the detected device.
+          if (beacon) {
+            return context.app.service('events').create({
+              event: 'proxemics',
+              payload: {
+                to: {
+                  userId: context.params.user.email,
+                  deviceUuid: scanningDevice.deviceUuid
+                },
+                type: 'enter',
+                scanedDeviceUuid: scanningDevice.deviceUuid,
+                detectedDeviceUuid: detectedDevice.deviceUuid,
+                beacon: context.data.beacon
+              }
+            });
+          }
         }).then(() => { return context; }).catch(e => { throw e; });
+      /*
       case 'remove':
         if (context.result && context.result.length > 0) {
           return context.app.service('devices').find({ query: { $limit: 1, beaconValues: { $in: context.result[0].beacon.values } } })
@@ -98,7 +116,7 @@ function afterCreateUpdatePatchAndRemove(context) {
                       userId: context.params.user.email,
                       deviceUuid: context.params.query.deviceUuid,
                     },
-                    type: 'deviceLost',
+                    type: 'exit',
                     data: device
                   }
                 });
@@ -106,15 +124,11 @@ function afterCreateUpdatePatchAndRemove(context) {
             }).then(() => { return context; }).catch(e => { throw e; });
         }
         break;
-      case 'find':
-      case 'get':
+        */
       default:
         return context;
     }
-  } else {
-    console.log('Internal Request');
-    return context;
-  }
+  } else return context;
 }
 
 module.exports = {
@@ -131,10 +145,10 @@ module.exports = {
     all: [],
     find: [],
     get: [],
-    create: [afterCreateUpdatePatchAndRemove],
-    update: [afterCreateUpdatePatchAndRemove],
-    patch: [afterCreateUpdatePatchAndRemove],
-    remove: [afterCreateUpdatePatchAndRemove]
+    create: [proxemics],
+    update: [proxemics],
+    patch: [proxemics],
+    remove: [proxemics]
   },
   error: {
     all: [],
