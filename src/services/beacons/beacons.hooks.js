@@ -57,7 +57,7 @@ function proxemics(context) {
     let scanningDevice, detectedDevice;
     switch (context.method) {
       case 'create':
-      case 'patch':
+        /* case 'patch': */
         const deviceUuid = context.data.deviceUuid || context.params.query.deviceUuid;
         const detectedBeacon = context.data.beacon;
         return Promise.all([
@@ -77,30 +77,31 @@ function proxemics(context) {
             // Moreover, check if the detected device is also detecting the scanned device.
             return context.app.service('beacons').find({
               query: {
-                $limit: 1,
-                deviceUuid: detectedDevice.deviceUuid,
+                /* $limit: 1,
+                deviceUuid: detectedDevice.deviceUuid, */
                 'beacon.values': scanningDevice.beaconValues
               }
             })
           }
-        }).then(beacons => {
-          const beacon = (beacons.data ? beacons.data : beacons)[0];
-          // Check if the scanning device's beacon has been detected by the detected device.
-          if (beacon) {
-            return context.app.service('events').create({
+        }).then(result => {
+          const beacons = result.data ? result.data : result;
+          const promises = [];
+          beacons.forEach(beacon => {
+            promises.push(context.app.service('events').create({
               event: 'proxemics',
               payload: {
                 to: {
                   userId: context.params.user.email,
-                  deviceUuid: scanningDevice.deviceUuid
+                  deviceUuid: beacon.deviceUuid
                 },
                 type: 'enter',
                 scanedDeviceUuid: scanningDevice.deviceUuid,
                 detectedDeviceUuid: detectedDevice.deviceUuid,
                 beacon: context.data.beacon
               }
-            });
-          }
+            }));
+            return Promise.all(promises);
+          });
         }).then(() => { return context; }).catch(e => { throw e; });
       /*
       case 'remove':
