@@ -1,7 +1,7 @@
-// Initializes the `applications` service on path `/applications`
+// Initializes the `proxemics` service on path `/proxemics`
 const createService = require('feathers-mongoose');
-const createModel = require('../../models/applications.model');
-const hooks = require('./applications.hooks');
+const createModel = require('../../models/proxemics.model');
+const hooks = require('./proxemics.hooks');
 
 module.exports = function (app) {
   const Model = createModel(app);
@@ -13,10 +13,10 @@ module.exports = function (app) {
   };
 
   // Initialize our service with any options it requires
-  app.use('/applications', createService(options));
+  app.use('/proxemics', createService(options));
 
   // Get our initialized service so that we can register hooks
-  const service = app.service('applications');
+  const service = app.service('proxemics');
 
   service.hooks(hooks);
 };

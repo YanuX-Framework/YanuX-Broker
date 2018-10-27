@@ -8,8 +8,8 @@ module.exports = function (app) {
   const events = ['proxemics'];
 
   const options = {
+    events,
     /* paginate */
-    events
   };
 
   // Initialize our service with any options it requires
