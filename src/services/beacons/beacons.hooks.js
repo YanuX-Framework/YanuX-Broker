@@ -1,4 +1,6 @@
 const { authenticate } = require('@feathersjs/authentication').hooks;
+const { Conflict } = require("@feathersjs/errors");
+
 
 function beforeCreate(context) {
   if (context.params.user
@@ -72,29 +74,41 @@ function proxemics(context) {
     if (context.method === 'create'
       || context.method === 'patch'
       || context.method === 'remove') {
-      return Promise.all([
-        context.app.service('devices').find({ query: { $limit: 1, deviceUuid: deviceUuid } }),
-        context.app.service('devices').find({ query: { $limit: 1, beaconValues: detectedBeacon.values } })
-      ]).then(devices => {
-        scanningDevice = (devices[0].data ? devices[0].data : devices[0])[0];
-        detectedDevice = (devices[1].data ? devices[1].data : devices[1])[0];
-        if (!scanningDevice || !detectedDevice) {
-          // If either of the devices is missing from the database it's either an error or there's nothing to do with them.
-          throw new Error('Either the scanning device or the detected device are absent from the database.');
-        } else if (!scanningDevice._id.equals(detectedDevice._id)) {
-          // It's natural that the scanning device is able to detect itself whenever you're using "external beacons".
-          // This is the interesting situation. Both devices are in the database and the scanning device is detecting a different device.
-          // Moreover, check if the detected device is also detecting the scanned device.
-          return context.app.service('beacons').find({
-            query: {
-              $limit: 1,
-              deviceUuid: detectedDevice.deviceUuid,
-              'beacon.values': scanningDevice.beaconValues
-            }
-          });
-        }
-      }).then(result => {
-        if (result) {
+      return new Promise((resolve, reject) => {
+        context.app.service('proxemics').create({
+          user: context.params.user
+        }).then(proxemics => {
+          resolve(proxemics);
+        }).catch(e => {
+          if (e instanceof Conflict) {
+            resolve();
+          } else {
+            reject(e);
+          }
+        });
+      }).then(() => {
+        return Promise.all([
+          context.app.service('devices').find({ query: { $limit: 1, deviceUuid: deviceUuid } }),
+          context.app.service('devices').find({ query: { $limit: 1, beaconValues: detectedBeacon.values } })
+        ]).then(devices => {
+          scanningDevice = (devices[0].data ? devices[0].data : devices[0])[0];
+          detectedDevice = (devices[1].data ? devices[1].data : devices[1])[0];
+          if (!scanningDevice || !detectedDevice) {
+            // If either of the devices is missing from the database it's either an error or there's nothing to do with them.
+            throw new Error('Either the scanning device or the detected device are absent from the database.');
+          } else if (!scanningDevice._id.equals(detectedDevice._id)) {
+            // It's natural that the scanning device is able to detect itself whenever you're using "external beacons".
+            // This is the interesting situation. Both devices are in the database and the scanning device is detecting a different device.
+            // Moreover, check if the detected device is also detecting the scanned device.
+            return context.app.service('beacons').find({
+              query: {
+                $limit: 1,
+                deviceUuid: detectedDevice.deviceUuid,
+                'beacon.values': scanningDevice.beaconValues
+              }
+            });
+          }
+        }).then(result => {
           const beacon = (result.data ? result.data : result)[0];
           let event = {
             event: 'proxemics',
@@ -125,8 +139,8 @@ function proxemics(context) {
           if (event.payload.type) {
             return context.app.service('events').create(event);
           }
-        }
-      }).then(() => { return context; }).catch(e => { throw e; });
+        }).then(() => { return context; }).catch(e => { throw e; });
+      })
     }
     return context;
   }

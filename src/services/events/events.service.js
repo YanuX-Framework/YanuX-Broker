@@ -3,9 +3,8 @@ const createService = require('./events.class.js');
 const hooks = require('./events.hooks');
 
 module.exports = function (app) {
-
-  /* const paginate = app.get('paginate'); */
   const events = ['proxemics'];
+  /* const paginate = app.get('paginate'); */
 
   const options = {
     events,

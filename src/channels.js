@@ -19,7 +19,8 @@ module.exports = function (app) {
       app.channel('anonymous').leave(connection);
       // Add it to the authenticated user channel
       app.channel('authenticated', 'users').join(connection);
-      // Add the user to a its specific channel
+      // Add the user to a its specific channels
+      app.channel(`users/${user._id}`).join(connection);
       app.channel(`users/${user.email}`).join(connection);
 
       // Channels can be named anything and joined on any condition 
@@ -44,11 +45,24 @@ module.exports = function (app) {
     return app.channel('authenticated');
   }); */
 
-
   const genericPublish = (data, context) => {
     if (data.to) {
       if (data.to.channel) {
         return app.channel(data.channel);
+      } else if (data.to.user && data.to.device && data.to.instance) {
+        return app.channel(`users/${data.to.user}/devices/${data.to.device}/instances/${data.to.instance}`);
+      } else if (data.to.user && data.to.instance) {
+        return app.channel(`users/${data.to.user}/instances/${data.to.instance}`);
+      } else if (data.to.user && data.to.device) {
+        return app.channel(`users/${data.to.user}/devices/${data.to.instance}`);
+      } else if (data.to.instance) {
+        return app.channel(`instances/${data.to.instance}`);
+      } else if (data.to.user && data.to.device) {
+        return app.channel(`users/${data.to.user}/devices/${data.to.device}`);
+      } else if (data.to.user) {
+        return app.channel(`users/${data.to.user}`);
+      } else if (data.to.device) {
+        return app.channel(`devices/${data.to.device}`);
       } else if (data.to.userId && data.to.deviceUuid && data.to.instanceUuid) {
         return app.channel(`users/${data.to.userId}/devices/${data.to.deviceUuid}/instances/${data.to.instanceUuid}`);
       } else if (data.to.userId && data.to.instanceUuid) {

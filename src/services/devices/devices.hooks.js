@@ -5,23 +5,25 @@ function afterPatch(context) {
     context.params.user &&
     context.params.query &&
     context.params.query.deviceUuid) {
-    if (context.params.connection && context.data) {
-      const userChannel = context.app.channel(`users/${context.params.user.email}`);
-      if (userChannel.connections.find(connection => connection === context.params.connection)) {
-        const userDeviceChannel = context.app.channel(`users/${context.params.user.email}/devices/${context.params.query.deviceUuid}`);
-        userDeviceChannel.join(context.params.connection);
+    return new Promise((resolve, reject) => {
+      if (!context.result.length) {
+        context.service.create(context.data)
+          .then(device => {
+            context.result = [device];
+            resolve(device)
+          }).catch(e => reject(e));
+      } else {
+        resolve(context.result[0]);
       }
-      const deviceChannel = context.app.channel(`devices/${context.params.query.deviceUuid}`)
-      deviceChannel.join(context.params.connection);
-    }
-    if (!context.result.length) {
-      return context.service.create(context.data)
-        .then(device => {
-          context.result = [device];
-          return context;
-        }).catch(e => { throw e });
-    }
-  }
+    }).then(device => {
+      if (context.params.connection && context.data) {
+        context.app.channel(`devices/${device._id}`).join(context.params.connection)
+        context.app.channel(`devices/${device.deviceUuid}`).join(context.params.connection);
+        context.app.channel(`users/${context.params.user._id}/devices/${device._id}`).join(context.params.connection);
+        context.app.channel(`users/${context.params.user.email}/devices/${device.deviceUuid}`).join(context.params.connection);
+      }
+    }).catch(e => { throw e });
+  } else return context;
 }
 
 module.exports = {
