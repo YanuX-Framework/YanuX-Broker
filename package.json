@@ -51,7 +51,7 @@
     "lodash": "^4.17.11",
     "mongodb": "^3.1.8",
     "mongodb-core": "^3.1.7",
-    "mongoose": "^5.3.6",
+    "mongoose": "^5.3.7",
     "passport-custom": "^1.0.5",
     "serve-favicon": "^2.5.0",
     "uuid": "^3.3.2",
@@ -60,7 +60,7 @@
   },
   "devDependencies": {
     "ajv": "^6.5.4",
-    "eslint": "^5.7.0",
+    "eslint": "^5.8.0",
     "mocha": "^5.2.0",
     "nodemon": "^1.18.5",
     "request": "^2.88.0",
