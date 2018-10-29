@@ -12,7 +12,7 @@ module.exports = function (app) {
     device: { type: Schema.Types.ObjectId, ref: 'devices', required: true },
     instanceUuid: { type: String, required: true, unique: true },
     elementClasses: { type: [String] }
-  }, { timestamps: true });
+  }, { timestamps: true, minimize: false });
 
   instances.index({ user: 1, client: 1, device: 1, instanceUuid: 1 }, { unique: true });
   return mongooseClient.model('instances', instances);

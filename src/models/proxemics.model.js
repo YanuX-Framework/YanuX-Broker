@@ -7,8 +7,8 @@ module.exports = function (app) {
   const { Schema } = mongooseClient;
   const proxemics = new Schema({
     user: { type: Schema.Types.ObjectId, ref: 'users', required: true, unique: true },
-    state: { type: Schema.Types.Mixed, required:true, default: [] }
-  }, { timestamps: true });
+    state: { type: Schema.Types.Mixed, required: true, default: {} }
+  }, { timestamps: true, minimize: false });
 
   return mongooseClient.model('proxemics', proxemics);
 };

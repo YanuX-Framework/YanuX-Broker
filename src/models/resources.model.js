@@ -10,7 +10,7 @@ module.exports = function (app) {
     user: { type: Schema.Types.ObjectId, ref: 'users', required: true },
     client: { type: Schema.Types.ObjectId, ref: 'clients', required: true },
     data: { type: Object, default: {} }
-  }, { timestamps: true });
+  }, { timestamps: true, minimize: false });
   resources.index({ user: 1, client: 1 }, { unique: true });
   
   return mongooseClient.model('resources', resources);

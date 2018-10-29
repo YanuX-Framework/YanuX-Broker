@@ -46,23 +46,51 @@ module.exports = function (app) {
   }); */
 
   const genericPublish = (data, context) => {
-    if (data.to) {
+    /* if (data.to) {
       if (data.to.channel) {
         return app.channel(data.channel);
       } else if (data.to.user && data.to.device && data.to.instance) {
-        return app.channel(`users/${data.to.user}/devices/${data.to.device}/instances/${data.to.instance}`);
+        if (data.to.user._id && data.to.device._id && data.to.instance._id) {
+          return app.channel(`users/${data.to.user._id}/devices/${data.to.device._id}/instances/${data.to.instance._id}`);
+        } else {
+          return app.channel(`users/${data.to.user}/devices/${data.to.device}/instances/${data.to.instance}`);
+        }
       } else if (data.to.user && data.to.instance) {
-        return app.channel(`users/${data.to.user}/instances/${data.to.instance}`);
+        if (data.to.user._id && data.to.instance._id) {
+          return app.channel(`users/${data.to.user._id}/instances/${data.to.instance._id}`);
+        } else {
+          return app.channel(`users/${data.to.user}/instances/${data.to.instance}`);
+        }
       } else if (data.to.user && data.to.device) {
-        return app.channel(`users/${data.to.user}/devices/${data.to.instance}`);
+        if (data.to.user._id && data.to.device._id) {
+          return app.channel(`users/${data.to.user._id}/devices/${data.to.instance._id}`);
+        } else {
+          return app.channel(`users/${data.to.user}/devices/${data.to.instance}`);
+        }
       } else if (data.to.instance) {
-        return app.channel(`instances/${data.to.instance}`);
+        if (data.to.instance._id) {
+          return app.channel(`instances/${data.to.instance._id}`);
+        } else {
+          return app.channel(`instances/${data.to.instance}`);
+        }
       } else if (data.to.user && data.to.device) {
-        return app.channel(`users/${data.to.user}/devices/${data.to.device}`);
+        if (data.to.user._id && data.to.device._id) {
+          return app.channel(`users/${data.to.user._id}/devices/${data.to.device._id}`);
+        } else {
+          return app.channel(`users/${data.to.user}/devices/${data.to.device}`);
+        }
       } else if (data.to.user) {
-        return app.channel(`users/${data.to.user}`);
+        if (data.to.user._id) {
+          return app.channel(`users/${data.to.user._id}`);
+        } else {
+          return app.channel(`users/${data.to.user}`);
+        }
       } else if (data.to.device) {
-        return app.channel(`devices/${data.to.device}`);
+        if (data.to.device._id) {
+          return app.channel(`devices/${data.to.device._id}`);
+        } else {
+          return app.channel(`devices/${data.to.device}`);
+        }
       } else if (data.to.userId && data.to.deviceUuid && data.to.instanceUuid) {
         return app.channel(`users/${data.to.userId}/devices/${data.to.deviceUuid}/instances/${data.to.instanceUuid}`);
       } else if (data.to.userId && data.to.instanceUuid) {
@@ -78,8 +106,15 @@ module.exports = function (app) {
       } else if (data.to.deviceUuid) {
         return app.channel(`devices/${data.to.deviceUuid}`);
       }
-    } else if (context.params && context.params.user) {
+    } else */
+    if (context.params && context.params.user) {
       return app.channel(`users/${context.params.user.email}`);
+    } else if (context.params && context.params.query && context.params.query.user) {
+      return app.channel(`users/${context.params.query.user}`);
+    } else if (context.data && context.data.user) {
+      return app.channel(`users/${context.data.user}`);
+    } else if (context.result && context.result.user) {
+      return app.channel(`users/${context.result.user}`);
     }
   };
 
@@ -98,6 +133,7 @@ module.exports = function (app) {
   app.service('beacons').publish(genericPublish);
   app.service('instances').publish(genericPublish);
   app.service('devices').publish(genericPublish);
+  app.service('events').publish(genericPublish);
   */
 
   // Here you can also add service specific event publishers

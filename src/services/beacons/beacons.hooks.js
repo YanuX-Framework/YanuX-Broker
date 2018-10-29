@@ -1,5 +1,6 @@
 const { authenticate } = require('@feathersjs/authentication').hooks;
 const { Conflict } = require("@feathersjs/errors");
+const _ = require('lodash');
 
 
 function beforeCreate(context) {
@@ -74,77 +75,78 @@ function proxemics(context) {
     if (context.method === 'create'
       || context.method === 'patch'
       || context.method === 'remove') {
+      /** 
+       * NOTE: 
+       * I'm not sure if this is the best idea to make sure that a proxemics record is ALWAYS present for the current user. 
+       * But it's working fine right now. 
+       */
       return new Promise((resolve, reject) => {
-        context.app.service('proxemics').create({
-          user: context.params.user
-        }).then(proxemics => {
-          resolve(proxemics);
-        }).catch(e => {
-          if (e instanceof Conflict) {
-            resolve();
-          } else {
-            reject(e);
-          }
-        });
-      }).then(() => {
-        return Promise.all([
-          context.app.service('devices').find({ query: { $limit: 1, deviceUuid: deviceUuid } }),
-          context.app.service('devices').find({ query: { $limit: 1, beaconValues: detectedBeacon.values } })
-        ]).then(devices => {
-          scanningDevice = (devices[0].data ? devices[0].data : devices[0])[0];
-          detectedDevice = (devices[1].data ? devices[1].data : devices[1])[0];
-          if (!scanningDevice || !detectedDevice) {
-            // If either of the devices is missing from the database it's either an error or there's nothing to do with them.
-            throw new Error('Either the scanning device or the detected device are absent from the database.');
-          } else if (!scanningDevice._id.equals(detectedDevice._id)) {
-            // It's natural that the scanning device is able to detect itself whenever you're using "external beacons".
-            // This is the interesting situation. Both devices are in the database and the scanning device is detecting a different device.
-            // Moreover, check if the detected device is also detecting the scanned device.
-            return context.app.service('beacons').find({
+        context.app.service('proxemics')
+          .create({ user: context.params.user._id })
+          .then(proxemics => { resolve(proxemics) })
+          .catch(e => {
+            if (e instanceof Conflict) {
+              resolve();
+            } else {
+              reject();
+            }
+          });
+      }).then(() => Promise.all([
+        context.app.service('devices').find({ query: { $limit: 1, deviceUuid: deviceUuid } }),
+        context.app.service('devices').find({ query: { $limit: 1, beaconValues: detectedBeacon.values } })
+      ])).then(devices => {
+        scanningDevice = (devices[0].data ? devices[0].data : devices[0])[0];
+        detectedDevice = (devices[1].data ? devices[1].data : devices[1])[0];
+        if (!scanningDevice || !detectedDevice) {
+          // If either of the devices is missing from the database it's either an error or there's nothing to do with them.
+          throw new Error('Either the scanning device or the detected device are absent from the database.');
+        } else if (!scanningDevice._id.equals(detectedDevice._id)) {
+          // It's natural that the scanning device is able to detect itself whenever you're using "external beacons".
+          // This is the interesting situation. Both devices are in the database and the scanning device is detecting a different device.
+          // Moreover, check if the detected device is also detecting the scanned device.
+          return Promise.all([
+            context.app.service('beacons').find({
               query: {
                 $limit: 1,
                 deviceUuid: detectedDevice.deviceUuid,
                 'beacon.values': scanningDevice.beaconValues
               }
-            });
-          }
-        }).then(result => {
-          const beacon = (result.data ? result.data : result)[0];
-          let event = {
-            event: 'proxemics',
-            payload: {
-              to: { userId: context.params.user.email },
-              type: null,
-              scanningDevice: scanningDevice,
-              detectedDevice: detectedDevice,
+            }),
+            context.app.service('proxemics').find({
+              query: {
+                $limit: 1,
+                user: context.params.user._id
+              }
+            })
+          ]);
+        }
+      }).then(result => {
+        if (result) {
+          const beacon = (result[0].data ? result[0].data : result[0])[0];
+          const currProxemics = (result[1].data ? result[1].data : result[1])[0];
+          if (currProxemics) {
+            let proxemics = {
+              user: context.params.user._id,
+              state: _.cloneDeep(currProxemics.state) || {}
             }
-          }
-          if (context.method === 'create') {
-            if (beacon) {
-              event.payload.type = 'entered';
+            if (beacon && (context.method === 'create' || context.method === 'patch')) {
+              proxemics.state[detectedDevice.deviceUuid] = detectedDevice.capabilities;
             } else {
-              event.payload.type = 'entering';
+              delete proxemics.state[detectedDevice.deviceUuid];
             }
-          } else if (context.method === 'patch') {
-            if (beacon) {
-              event.payload.type = 'staying';
+            if (!_.isEqual(currProxemics.state, proxemics.state)) {
+              return context.app.service('proxemics').update(currProxemics._id, proxemics);
             }
-          } else if (context.method === 'remove') {
-            if (beacon) {
-              event.payload.type = 'leaving';
-            } else {
-              event.payload.type = 'left';
-            }
+          } else {
+            throw new Error('Current proxemics state is missing.');
           }
-          if (event.payload.type) {
-            return context.app.service('events').create(event);
-          }
-        }).then(() => { return context; }).catch(e => { throw e; });
-      })
+        }
+      }).then(() => { return context; }).catch(e => { throw e; });
     }
-    return context;
   }
+  return context;
 }
+
 module.exports = {
   before: {
     all: [authenticate('jwt')],

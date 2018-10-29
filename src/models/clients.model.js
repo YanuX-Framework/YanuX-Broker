@@ -7,7 +7,7 @@ module.exports = function (app) {
   const { Schema } = mongooseClient;
   const clients = new Schema({
     id: { type: String, required: true, unique: true }
-  }, { timestamps: true });
+  }, { timestamps: true, minimize: false });
 
   return mongooseClient.model('clients', clients);
 };

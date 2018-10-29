@@ -10,9 +10,7 @@ module.exports = function (app) {
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     deviceUuid: {type: String, required: true },
     beacon: { type: Object, required: true }
-  }, {
-    timestamps: true
-  });
+  }, { timestamps: true, minimize: false });
   beacons.index({beaconKey: 1, deviceUuid: 1}, {unique: true});
 
   return mongooseClient.model('beacons', beacons);
