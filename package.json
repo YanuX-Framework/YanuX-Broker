@@ -42,16 +42,16 @@
     "@feathersjs/primus": "^3.2.6",
     "@feathersjs/socketio": "^3.2.7",
     "compression": "^1.7.3",
-    "cors": "^2.8.4",
+    "cors": "^2.8.5",
     "debug": "^4.1.0",
     "feathers-authentication-hooks": "^0.3.1",
     "feathers-mongodb": "^3.3.0",
     "feathers-mongoose": "^6.2.0",
     "helmet": "^3.14.0",
     "lodash": "^4.17.11",
-    "mongodb": "^3.1.8",
-    "mongodb-core": "^3.1.7",
-    "mongoose": "^5.3.8",
+    "mongodb": "^3.1.9",
+    "mongodb-core": "^3.1.8",
+    "mongoose": "^5.3.10",
     "passport-custom": "^1.0.5",
     "serve-favicon": "^2.5.0",
     "uuid": "^3.3.2",
@@ -59,10 +59,10 @@
     "ws": "^6.1.0"
   },
   "devDependencies": {
-    "ajv": "^6.5.4",
+    "ajv": "^6.5.5",
     "eslint": "^5.8.0",
     "mocha": "^5.2.0",
-    "nodemon": "^1.18.5",
+    "nodemon": "^1.18.6",
     "request": "^2.88.0",
     "request-promise": "^4.2.2"
   }
