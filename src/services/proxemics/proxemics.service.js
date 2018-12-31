@@ -9,6 +9,7 @@ module.exports = function (app) {
 
   const options = {
     Model,
+    multi: true
     /* paginate */
   };
 

@@ -9,9 +9,10 @@ module.exports = function (app) {
 
   const options = {
     Model,
+    multi: true
     /* paginate */
   };
-
+  
   // Initialize our service with any options it requires
   app.use('/devices', createService(options));
 

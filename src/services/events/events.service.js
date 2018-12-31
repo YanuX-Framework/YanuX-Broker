@@ -9,6 +9,7 @@ module.exports = function (app) {
   const options = {
     events,
     /* paginate */
+    multi: true
   };
 
   // Initialize our service with any options it requires
