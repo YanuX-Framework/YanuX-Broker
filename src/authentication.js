@@ -1,3 +1,5 @@
+const path = require('path');
+const fs = require('fs');
 const authentication = require('@feathersjs/authentication');
 const jwt = require('@feathersjs/authentication-jwt');
 const local = require('@feathersjs/authentication-local');
@@ -5,6 +7,8 @@ const yanux = require('./auth/yanux');
 
 module.exports = function (app) {
   const config = app.get('authentication');
+  const privateKey = fs.readFileSync(path.join(__dirname,'..','keys','private.pem'), 'utf8');
+  config.secret = privateKey;
   // Set up authentication with the secret
   app.configure(authentication(config));
   app.configure(jwt());

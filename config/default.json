@@ -8,7 +8,7 @@
   },
   "mongodb": "mongodb://localhost:27017/yanux-broker",
   "authentication": {
-    "secret": "22c569841fd542db2b04ec091616becd193d689b3065dac7a6439a2218a3e6c873c5abe00de4931c83a2861c6b216647c0f990b37acc488e3ba31e2d6c0e1189e14e634b94375b139e8287398fd745c388fcc909272ed69842f5982a32cb920d20fe56ff55d888a8563f33c5f55ec882242c93f4a148b11d5579478e492dd29e66e962ebbc5ccf8467db09358223a5149649222fbadacefbd1e0a856d1d121084a2113c426ba0714bc7a88730b129e9dff32ce22586c4836e476a644dbdde005ea50d8f16d5cc751895113557a4949c03a9d602b12d28c31698ace8c43de8347af6edfbfc07a201c2b3d73d2d1950507084379ac8e3a969728f7ee63e8c78625",
+    "secret": null,
     "strategies": [
       "jwt",
       "local",
@@ -30,7 +30,7 @@
       "audience": "https://www.yanux.org",
       "subject": "anonymous",
       "issuer": "feathers",
-      "algorithm": "HS256",
+      "algorithm": "RS256",
       "expiresIn": "1h"
     },
     "local": {
