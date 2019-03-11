@@ -2,6 +2,7 @@ const { authenticate } = require('@feathersjs/authentication').hooks;
 const { Conflict } = require("@feathersjs/errors");
 const _ = require('lodash');
 
+const BEACONS_MAX_INACTIVITY_TIMER = 30000;
 
 function beforeCreate(context) {
   if (context.params.user
@@ -108,6 +109,15 @@ function proxemics(context) {
             context.app.service('beacons').find({
               query: {
                 $limit: 1,
+                /**
+                 * TODO:
+                 * This is just a sanity check to ensure that I don't get any old beacon entries that may happen to be laying around on the database.
+                 * However, I should probably implement stronger mechanisms to ensure consistency. Right now, if the client has some hiccup while deleting a beacon there may be old data left behind at the server.
+                 * I should also probably add a new hook that actually deletes old beacons before new ones are added. 
+                 */
+                updatedAt: {
+                  $gt: new Date().getTime() - BEACONS_MAX_INACTIVITY_TIMER
+                },
                 deviceUuid: detectedDevice.deviceUuid,
                 'beacon.values': scanningDevice.beaconValues
               }
