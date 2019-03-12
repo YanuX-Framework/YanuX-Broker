@@ -18,6 +18,7 @@ const channels = require('./channels');
 const mongodb = require('./mongodb');
 const mongoose = require('./mongoose');
 const authentication = require('./authentication');
+const zeroconf = require('./zeroconf');
 
 const app = express(feathers());
 
@@ -47,6 +48,8 @@ app.configure(authentication);
 app.configure(services);
 // Set up event channels (see channels.js)
 app.configure(channels);
+// Set up DNS-SD based zeroconf
+app.configure(zeroconf);
 
 // Configure a middleware for 404s and the error handler
 app.use(express.notFound());

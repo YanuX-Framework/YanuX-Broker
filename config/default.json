@@ -1,4 +1,5 @@
 {
+  "name": "YanuX-Broker",
   "host": "localhost",
   "port": 3002,
   "public": "../public/",
