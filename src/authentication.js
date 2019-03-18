@@ -7,7 +7,7 @@ const yanux = require('./auth/yanux');
 
 module.exports = function (app) {
   const config = app.get('authentication');
-  const privateKey = fs.readFileSync(path.join(__dirname,'..','keys','private.pem'), 'utf8');
+  const privateKey = fs.readFileSync(path.join(__dirname,'..','keys','combined.pem'), 'utf8');
   config.secret = privateKey;
   // Set up authentication with the secret
   app.configure(authentication(config));
