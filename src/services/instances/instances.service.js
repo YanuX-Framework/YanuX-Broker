@@ -20,4 +20,8 @@ module.exports = function (app) {
   const service = app.service('instances');
 
   service.hooks(hooks);
+
+  service.remove(null)
+  .then(res => console.log('Removed all outstanding instances:', res))
+  .catch(e => console.log('Failed to remove outstanding instances:', e));
 };

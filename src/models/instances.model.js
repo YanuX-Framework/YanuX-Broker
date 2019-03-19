@@ -11,7 +11,7 @@ module.exports = function (app) {
     client: { type: Schema.Types.ObjectId, ref: 'clients', required: true },
     device: { type: Schema.Types.ObjectId, ref: 'devices', required: true },
     instanceUuid: { type: String, required: true, unique: true },
-    elementClasses: { type: [String] }
+    active: { type: Boolean, required: true, default: true }
   }, { timestamps: true, minimize: false });
 
   instances.index({ user: 1, client: 1, device: 1, instanceUuid: 1 }, { unique: true });

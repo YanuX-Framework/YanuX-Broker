@@ -10,9 +10,9 @@ function beforeCreate(context) {
 }
 
 function afterCreate(context) {
-  if (context.data &&
-    context.params &&
-    context.params.connection) {
+  if (context.data
+    && context.params
+    && context.params.connection) {
     const onDisconnect = () => {
       context.service.remove(null, {
         query: {
@@ -66,7 +66,6 @@ module.exports = {
     patch: [],
     remove: []
   },
-
   after: {
     all: [],
     find: [],
@@ -76,7 +75,6 @@ module.exports = {
     patch: [],
     remove: []
   },
-
   error: {
     all: [],
     find: [],
