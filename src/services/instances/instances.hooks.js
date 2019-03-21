@@ -3,6 +3,8 @@ const socketio = require('@feathersjs/socketio')
 const primus = require('@feathersjs/primus')
 const uuidv4 = require('uuid/v4');
 
+const protect = require('@feathersjs/authentication-local').hooks.protect;
+
 function beforeCreate(context) {
   if (context.data) {
     context.data.instanceUuid = context.data.instanceUuid || uuidv4();
@@ -67,7 +69,10 @@ module.exports = {
     remove: []
   },
   after: {
-    all: [],
+    all: [
+      // Make sure the user's password field is never sent to the client
+      // Always must be the last hook
+      protect('user.password')],
     find: [],
     get: [],
     create: [afterCreate],
