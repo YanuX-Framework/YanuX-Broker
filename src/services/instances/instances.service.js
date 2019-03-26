@@ -22,7 +22,7 @@ module.exports = function (app) {
 
   service.hooks(hooks);
 
-  service.remove(null)
-  .then(res => console.log('Removed all outstanding instances:', res))
-  .catch(e => console.log('Failed to remove outstanding instances:', e));
+  service.remove(null, { query: { brokerName: app.get('name') } })
+  .then(res => console.log(`Removed all outstanding instances belonging to ${app.get('name')}:`, res))
+  .catch(e => console.log(`Failed to remove outstanding instances belonging to ${app.get('name')}:`, e));
 };

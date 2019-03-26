@@ -1,26 +1,35 @@
 const errors = require('@feathersjs/errors');
 
+const isInternal = context => {
+    return !context.params.provider
+}
+
 const checkOwnership = context => entity => {
-    if (entity.user &&
-        entity.client &&
+    //It should be an internal method, so allow access!.
+    if (isInternal(context) || !entity) {
+        return true;
+    } else if (context.service &&
+        context.service.Model &&
+        context.service.Model.modelName === 'users' &&
+        context.params &&
+        context.params.payload &&
+        context.params.payload.userId &&
+        entity &&
+        entity._id &&
+        entity._id.toString() === context.params.payload.userId.toString()) {
+        return true;
+    } else if (entity &&
+        entity.user &&
         context.params &&
         context.params.payload &&
         context.params.payload.userId &&
         entity.user.toString() === context.params.payload.userId.toString()) {
-        if (context.params.payload.clientId) {
+        if (entity.client && context.params.payload.clientId) {
             return entity.client.toString() === context.params.payload.clientId.toString();
-        }
-        return true;
+        } else { return true; }
     }
-    //External call, if it didn't pass the checks above the access should be blocked.
-    if (context.params.provider) {
-        return false;
-        //It should be an internal method, so allow access anyway.
-    } else {
-        return true;
-    }
+    return false;
 }
-
 
 /**
  * NOTE: In both of the hooks below I'm assuming that if no 'context.params.payload.userId' or
@@ -30,40 +39,29 @@ const checkOwnership = context => entity => {
  */
 module.exports.canWriteEntity = context => {
     const checker = checkOwnership(context);
-    if (context.method === 'create') {
-        if (checker(context.data)) {
-            return context;
-        } else {
-            throw new errors.Forbidden('Write access denied.')
-        }
+    if (isInternal(context)) {
+        return context;
+    } else if (context.method === 'create') {
+        if (checker(context.data)) { return context; }
+        else { throw new errors.Forbidden('Write access denied.'); }
     } else {
         return new Promise((resolve, reject) => {
             let promise = Promise.resolve(false);
             if (context.id) {
-                promise = context.service
-                    .get(context.id)
-                    .then(entity => checker(entity))
-            } else if (context.params.query
-                && checker(context.params.query)) {
-                /**
-                 * NOTE: At this point I can probably just set promise = Promise.resolve(true).
-                 * The extra database query should be unnecessary and I'm commenting it out to
-                 * just to potentially save a couple of milliseconds.
-                 */
-                promise = Promise.resolve(true);
-                /*promise = context.service
-                    .find({ query: context.params.query })
-                    .then(entities => {
+                promise = context.service.get(context.id).then(entity => checker(entity))
+            } else if (context.params.query) {
+                if (checker(context.params.query)) {
+                    promise = Promise.resolve(true);
+                } else {
+                    promise = context.service.find({ query: context.params.query }).then(entities => {
                         const results = entities.data ? entities.data : entities;
                         return results.every(checker);
-                    });*/
+                    });
+                }
             }
             promise.then(isOwner => {
-                if (isOwner) {
-                    resolve(context);
-                } else {
-                    reject(new errors.Forbidden('Write access denied.'));
-                }
+                if (isOwner) { resolve(context); }
+                else { reject(new errors.Forbidden('Write access denied.')); }
             }).catch(e => reject(e));
         });
     }
@@ -72,18 +70,19 @@ module.exports.canWriteEntity = context => {
 module.exports.canReadEntity = context => {
     if (context.type !== 'after') {
         throw new Error(`This hook should only be used as a 'after' hook.`);
+    } else if (isInternal(context)) {
+        return context
+    } else {
+        const checker = checkOwnership(context);
+        let result;
+        if (context.method === 'get') {
+            result = context.result;
+        } else if (context.method === 'find') {
+            result = context.result.data ? context.result.data : context.result;
+        }
+        if (Array.isArray(result) && result.every(checker) || !Array.isArray(result) && checker(result)) {
+            return context;
+        } else { throw new errors.Forbidden('Read access denied.'); }
     }
-    const checker = checkOwnership(context);
-    let result;
-    if (context.method === 'get') {
-        result = context.result;
-    } else if (context.method === 'find') {
-        result = context.result.data ? context.result.data : context.result;
-    }
-    if (Array.isArray(result) && result.every(checker) ||
-        !Array.isArray(result) && checker(result)) {
-        return context;
-    }
-    throw new errors.Forbidden('Read access denied.');
 }
 

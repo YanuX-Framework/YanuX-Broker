@@ -6,6 +6,7 @@ module.exports = function (app) {
   const mongooseClient = app.get('mongooseClient');
   const { Schema } = mongooseClient;
   const devices = new Schema({
+    user: { type: Schema.Types.ObjectId, ref: 'users', required: true },
     deviceUuid: { type: String, required: true, unique: true },
     beaconValues: { type: Array },
     /**

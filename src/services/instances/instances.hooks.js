@@ -4,6 +4,8 @@ const primus = require('@feathersjs/primus')
 const uuidv4 = require('uuid/v4');
 
 const protect = require('@feathersjs/authentication-local').hooks.protect;
+const canReadEntity = require('../../hooks/authorization').canReadEntity
+const canWriteEntity = require('../../hooks/authorization').canWriteEntity
 
 function beforeCreate(context) {
   if (context.data) {
@@ -63,18 +65,18 @@ module.exports = {
     all: [authenticate('jwt')],
     find: [],
     get: [],
-    create: [beforeCreate],
-    update: [],
-    patch: [],
-    remove: []
+    create: [canWriteEntity, beforeCreate],
+    update: [canWriteEntity],
+    patch: [canWriteEntity],
+    remove: [canWriteEntity]
   },
   after: {
     all: [
       // Make sure the user's password field is never sent to the client
       // Always must be the last hook
       protect('user.password')],
-    find: [],
-    get: [],
+    find: [canReadEntity],
+    get: [canReadEntity],
     create: [afterCreate],
     update: [],
     patch: [],

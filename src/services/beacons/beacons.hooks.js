@@ -2,6 +2,9 @@ const { authenticate } = require('@feathersjs/authentication').hooks;
 const { Conflict } = require("@feathersjs/errors");
 const _ = require('lodash');
 
+const canReadEntity = require('../../hooks/authorization').canReadEntity
+const canWriteEntity = require('../../hooks/authorization').canWriteEntity
+
 const BEACONS_MAX_INACTIVITY_TIMER = 30000;
 
 function beforeCreate(context) {
@@ -23,7 +26,7 @@ function beforeCreate(context) {
   }
 }
 
-function beforePatchAndUpdate(context) {
+function beforePatchUpdate(context) {
   if (context.data &&
     context.data.beacon &&
     context.params.query) {
@@ -162,15 +165,15 @@ module.exports = {
     all: [authenticate('jwt')],
     find: [],
     get: [],
-    create: [beforeCreate],
-    update: [beforePatchAndUpdate],
-    patch: [beforePatchAndUpdate],
-    remove: []
+    create: [canWriteEntity, beforeCreate],
+    update: [canWriteEntity, beforePatchUpdate],
+    patch: [canWriteEntity, beforePatchUpdate],
+    remove: [canWriteEntity]
   },
   after: {
     all: [],
-    find: [],
-    get: [],
+    find: [canReadEntity],
+    get: [canReadEntity],
     create: [proxemics],
     update: [proxemics],
     patch: [proxemics],
