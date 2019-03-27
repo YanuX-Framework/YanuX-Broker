@@ -19,9 +19,8 @@ module.exports = function (app) {
       app.channel('anonymous').leave(connection);
       // Add it to the authenticated user channel
       app.channel('authenticated', 'users').join(connection);
-      // Add the user to a its specific channels
+      // Add the user to a its specific channel
       app.channel(`users/${user._id}`).join(connection);
-      app.channel(`users/${user.email}`).join(connection);
 
       // Channels can be named anything and joined on any condition 
       // E.g. to send real-time events only to admins use
@@ -46,76 +45,33 @@ module.exports = function (app) {
   }); */
 
   const genericPublish = (data, context) => {
-    /* if (data.to) {
-      if (data.to.channel) {
-        return app.channel(data.channel);
-      } else if (data.to.user && data.to.device && data.to.instance) {
-        if (data.to.user._id && data.to.device._id && data.to.instance._id) {
-          return app.channel(`users/${data.to.user._id}/devices/${data.to.device._id}/instances/${data.to.instance._id}`);
-        } else {
-          return app.channel(`users/${data.to.user}/devices/${data.to.device}/instances/${data.to.instance}`);
-        }
-      } else if (data.to.user && data.to.instance) {
-        if (data.to.user._id && data.to.instance._id) {
-          return app.channel(`users/${data.to.user._id}/instances/${data.to.instance._id}`);
-        } else {
-          return app.channel(`users/${data.to.user}/instances/${data.to.instance}`);
-        }
-      } else if (data.to.user && data.to.device) {
-        if (data.to.user._id && data.to.device._id) {
-          return app.channel(`users/${data.to.user._id}/devices/${data.to.instance._id}`);
-        } else {
-          return app.channel(`users/${data.to.user}/devices/${data.to.instance}`);
-        }
-      } else if (data.to.instance) {
-        if (data.to.instance._id) {
-          return app.channel(`instances/${data.to.instance._id}`);
-        } else {
-          return app.channel(`instances/${data.to.instance}`);
-        }
-      } else if (data.to.user && data.to.device) {
-        if (data.to.user._id && data.to.device._id) {
-          return app.channel(`users/${data.to.user._id}/devices/${data.to.device._id}`);
-        } else {
-          return app.channel(`users/${data.to.user}/devices/${data.to.device}`);
-        }
-      } else if (data.to.user) {
-        if (data.to.user._id) {
-          return app.channel(`users/${data.to.user._id}`);
-        } else {
-          return app.channel(`users/${data.to.user}`);
-        }
-      } else if (data.to.device) {
-        if (data.to.device._id) {
-          return app.channel(`devices/${data.to.device._id}`);
-        } else {
-          return app.channel(`devices/${data.to.device}`);
-        }
-      } else if (data.to.userId && data.to.deviceUuid && data.to.instanceUuid) {
-        return app.channel(`users/${data.to.userId}/devices/${data.to.deviceUuid}/instances/${data.to.instanceUuid}`);
-      } else if (data.to.userId && data.to.instanceUuid) {
-        return app.channel(`users/${data.to.userId}/instances/${data.to.instanceUuid}`);
-      } else if (data.to.userId && data.to.deviceUuid) {
-        return app.channel(`users/${data.to.userId}/devices/${data.to.deviceUuid}`);
-      } else if (data.to.instanceUuid) {
-        return app.channel(`instances/${data.to.instanceUuid}`);
-      } else if (data.to.userId && data.to.deviceUuid) {
-        return app.channel(`users/${data.to.userId}/devices/${data.to.deviceUuid}`);
-      } else if (data.to.userId) {
-        return app.channel(`users/${data.to.userId}`);
-      } else if (data.to.deviceUuid) {
-        return app.channel(`devices/${data.to.deviceUuid}`);
-      }
-    } else */
-    if (context.params && context.params.user) {
-      return app.channel(`users/${context.params.user.email}`);
-    } else if (context.params && context.params.query && context.params.query.user) {
-      return app.channel(`users/${context.params.query.user}`);
-    } else if (context.data && context.data.user) {
-      return app.channel(`users/${context.data.user}`);
-    } else if (context.result && context.result.user) {
-      return app.channel(`users/${context.result.user}`);
+    let channel;
+    if (context.path === 'clients') {
+      channel = app.channel(`clients/${data._id}`);
+    } else if (data && data.client) {
+      channel = app.channel(`clients/${data.client._id ? data.client._id : data.client}`);
+    } else {
+      channel = app.channel(channel);
     }
+
+    if (context.params && context.params.connection && context.params.connection.user) {
+      return channel.filter(connection =>
+        connection.user._id.toString() === (context.params.connection.user._id.toString()));
+    } if (data && data.user) {
+      return channel.filter(connection =>
+        connection.user._id.toString() === (data.user._id ? data.user._id : data.user).toString());
+    } else if (context.data && context.data.user) {
+      return channel.filter(connection =>
+        connection.user._id.toString() === (context.data.user._id ? context.data.user._id : context.data.user).toString());
+    } else if (context.result && context.result.user) {
+      return channel.filter(connection =>
+        connection.user._id.toString() === (context.result.user._id ? context.result.user._id : context.result.user).toString());
+    } else if (context.params && context.params.query && context.params.query.user) {
+      return channel.filter(connection =>
+        connection.user._id.toString() === (context.params.query.user._id ? context.params.query.user._id : context.params.query.user).toString());
+    }
+
+    return channel;
   };
 
   app.on('logout', (authResult, { connection }) => {
@@ -125,16 +81,6 @@ module.exports = function (app) {
 
   // Publishing events from all events to the user specific channel.
   app.publish(genericPublish);
-  /*
-  app.service('users').publish(genericPublish);
-  app.service('clients').publish(genericPublish);
-  app.service('events').publish(genericPublish);
-  app.service('resources').publish(genericPublish);
-  app.service('beacons').publish(genericPublish);
-  app.service('instances').publish(genericPublish);
-  app.service('devices').publish(genericPublish);
-  app.service('events').publish(genericPublish);
-  */
 
   // Here you can also add service specific event publishers
   // e.g. the publish the `users` service `created` event to the `admins` channel

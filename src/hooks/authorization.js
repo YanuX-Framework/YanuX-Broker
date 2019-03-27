@@ -8,7 +8,8 @@ const checkOwnership = context => entity => {
     //It should be an internal method, so allow access!.
     if (isInternal(context) || !entity) {
         return true;
-    } else if (context.service &&
+    } else if (
+        context.service &&
         context.service.Model &&
         context.service.Model.modelName === 'users' &&
         context.params &&
@@ -18,7 +19,8 @@ const checkOwnership = context => entity => {
         entity._id &&
         entity._id.toString() === context.params.payload.userId.toString()) {
         return true;
-    } else if (entity &&
+    } else if (
+        entity &&
         entity.user &&
         context.params &&
         context.params.payload &&
@@ -26,7 +28,7 @@ const checkOwnership = context => entity => {
         entity.user.toString() === context.params.payload.userId.toString()) {
         if (entity.client && context.params.payload.clientId) {
             return entity.client.toString() === context.params.payload.clientId.toString();
-        } else { return true; }
+        } else return true;
     }
     return false;
 }
@@ -42,8 +44,8 @@ module.exports.canWriteEntity = context => {
     if (isInternal(context)) {
         return context;
     } else if (context.method === 'create') {
-        if (checker(context.data)) { return context; }
-        else { throw new errors.Forbidden('Write access denied.'); }
+        if (checker(context.data)) return context;
+        else throw new errors.Forbidden('Write access denied.');
     } else {
         return new Promise((resolve, reject) => {
             let promise = Promise.resolve(false);
@@ -60,8 +62,8 @@ module.exports.canWriteEntity = context => {
                 }
             }
             promise.then(isOwner => {
-                if (isOwner) { resolve(context); }
-                else { reject(new errors.Forbidden('Write access denied.')); }
+                if (isOwner) resolve(context);
+                else reject(new errors.Forbidden('Write access denied.'));
             }).catch(e => reject(e));
         });
     }
@@ -82,7 +84,7 @@ module.exports.canReadEntity = context => {
         }
         if (Array.isArray(result) && result.every(checker) || !Array.isArray(result) && checker(result)) {
             return context;
-        } else { throw new errors.Forbidden('Read access denied.'); }
+        } else throw new errors.Forbidden('Read access denied.');
     }
 }
 

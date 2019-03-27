@@ -8,11 +8,12 @@ function beforeCreateUpdatePatch(context) {
     return context;
   } else if (context.params.user) {
     context.data.user = context.params.user;
-  } else { throw Error('No user associated with the current connection.'); }
+  } else throw Error('No user associated with the current connection.');
 }
 
 function afterPatch(context) {
-  if (context.method === 'patch' &&
+  if (
+    context.method === 'patch' &&
     context.params.user &&
     context.params.query &&
     context.params.query.deviceUuid) {
@@ -27,14 +28,12 @@ function afterPatch(context) {
         resolve(context.result[0]);
       }
     }).then(device => {
-      if (context.params.connection && context.data) {
-        context.app.channel(`devices/${device._id}`).join(context.params.connection)
-        context.app.channel(`devices/${device.deviceUuid}`).join(context.params.connection);
-        context.app.channel(`users/${context.params.user._id}/devices/${device._id}`).join(context.params.connection);
-        context.app.channel(`users/${context.params.user.email}/devices/${device.deviceUuid}`).join(context.params.connection);
+      if (context.params && context.params.connection && context.params.user && context.data) {
+        context.app.channel(`users/${context.params.user._id ? context.params.user._id : context.params.user}`).join(context.params.connection);
+        context.app.channel(`devices/${device._id ? device._id : device}`).join(context.params.connection)
       }
     }).catch(e => { throw e });
-  } else { return context };
+  } else return context;
 }
 
 module.exports = {

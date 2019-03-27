@@ -8,9 +8,10 @@ const canWriteEntity = require('../../hooks/authorization').canWriteEntity
 const BEACONS_MAX_INACTIVITY_TIMER = 30000;
 
 function beforeCreate(context) {
-  if (context.params.user
-    && context.data.beaconKey
-    && context.data.deviceUuid) {
+  if (
+    context.params.user &&
+    context.data.beaconKey &&
+    context.data.deviceUuid) {
     const user = context.params.user;
     const beaconkey = context.data.beaconKey;
     const deviceUuid = context.data.deviceUuid;
@@ -20,14 +21,13 @@ function beforeCreate(context) {
         deviceUuid: deviceUuid,
         beaconKey: beaconkey
       }
-    }).then(beacon => {
-      return context;
-    }).catch(e => { throw e; });
+    }).then(() => context).catch(e => { throw e; });
   }
 }
 
 function beforePatchUpdate(context) {
-  if (context.data &&
+  if (
+    context.data &&
     context.data.beacon &&
     context.params.query) {
     const beacon = context.data.beacon;
@@ -76,9 +76,10 @@ function proxemics(context) {
     if (!deviceUuid || !detectedBeacon) {
       return context;
     }
-    if (context.method === 'create'
-      || context.method === 'patch'
-      || context.method === 'remove') {
+    if (
+      context.method === 'create' ||
+      context.method === 'patch' ||
+      context.method === 'remove') {
       /** 
        * NOTE: 
        * I'm not sure if this is the best idea to make sure that a proxemics record is ALWAYS present for the current user. 
@@ -154,7 +155,7 @@ function proxemics(context) {
             throw new Error('Current proxemics state is missing.');
           }
         }
-      }).then(() => { return context; }).catch(e => { throw e; });
+      }).then(() => context).catch(e => { throw e; });
     }
   }
   return context;

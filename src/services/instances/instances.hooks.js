@@ -14,9 +14,7 @@ function beforeCreate(context) {
 }
 
 function afterCreate(context) {
-  if (context.data
-    && context.params
-    && context.params.connection) {
+  if (context.data && context.params && context.params.connection) {
     const onDisconnect = () => {
       context.service.remove(null, {
         query: {
@@ -32,6 +30,7 @@ function afterCreate(context) {
       const connection = context.params.connection[socketio.SOCKET_KEY];
       connection.on('disconnect', onDisconnect);
     }
+    
     /**
      * TODO:
      * Test if this works with a Primus-based client!
@@ -40,24 +39,22 @@ function afterCreate(context) {
       const connection = context.params.connection[primus.SOCKET_KEY];
       connection.on('end', onDisconnect);
     }
-    return context.app.service('devices').get(context.data.device)
-      .then(device => {
-        context.app.channel(`instances/${context.result._id}`).join(context.params.connection);
-        context.app.channel(`instances/${context.result.instanceUuid}`).join(context.params.connection);
 
-        context.app.channel(`users/${context.params.user._id}/instances/${context.result._id}`).join(context.params.connection);
-        context.app.channel(`users/${context.params.user.email}/instances/${context.data.instanceUuid}`).join(context.params.connection);
+    if (context.params && context.params.user) {
+      context.app.channel(`users/${context.params.user._id ? context.params.user._id : context.params.user}`).join(context.params.connection);
+    }
+    if (context.result) {
+      context.app.channel(`instances/${context.result._id ? context.result._id : context.result}`).join(context.params.connection);
+      if (context.result.client) {
+        context.app.channel(`clients/${context.result.client._id ? context.result.client._id : context.result.client}`).join(context.params.connection);
+      }
+      if (context.result.device) {
+        context.app.channel(`devices/${context.result.device._id ? context.result.device._id : context.result.device}`).join(context.params.connection)
+      }
+    }
 
-        context.app.channel(`users/${context.params.user._id}/devices/${device._id}`).join(context.params.connection);
-        context.app.channel(`users/${context.params.user.email}/devices/${device.deviceUuid}`).join(context.params.connection);
-
-        context.app.channel(`users/${context.params.user._id}/devices/${device._id}/instances/${context.result._id}`).join(context.params.connection);
-        context.app.channel(`users/${context.params.user.email}/devices/${device.deviceUuid}/instances/${context.result.instanceUuid}`).join(context.params.connection);
-        return context;
-      }).catch(e => { throw e });
-  } else {
-    return context;
   }
+  return context;
 }
 
 module.exports = {
