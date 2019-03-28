@@ -15,6 +15,7 @@ module.exports = function (app) {
      * For now, I'll just leave as a "mixed" type.
      */
     capabilities: { type: Schema.Types.Mixed },
+    brokerName: { type: String, required: true, default: app.get('name') }
   }, { timestamps: true, minimize: false });
   return mongooseClient.model('devices', devices);
 };

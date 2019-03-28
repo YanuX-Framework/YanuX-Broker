@@ -42,5 +42,8 @@
     "yanux": {
       "url": "http://localhost:3001/api/verify_oauth2"
     }
+  },
+  "beacons": {
+    "maxInactivityTime": 5000
   }
 }

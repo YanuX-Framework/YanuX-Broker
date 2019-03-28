@@ -5,7 +5,27 @@ const _ = require('lodash');
 const canReadEntity = require('../../hooks/authorization').canReadEntity
 const canWriteEntity = require('../../hooks/authorization').canWriteEntity
 
-const BEACONS_MAX_INACTIVITY_TIMER = 30000;
+function logBeacons(context) {
+  if (context.result) {
+    let results;
+    if (_.isArray(context.result) || _.isArray(context.result.data)) {
+      results = context.result.data ? context.result.data : context.result
+    } else {
+      results = [context.result]
+    }
+
+    let promises = [];
+    results.forEach(result => {
+      const data = _.clone(result)
+      data._id = null;
+      data.createdAt = null;
+      data.updatedAt = null;
+      data.method = context.method;
+      promises.push(context.app.service('beacon-logs').create(data));
+    });
+    return Promise.all(promises).then(() => context)
+  } else return context;
+}
 
 function beforeCreate(context) {
   if (
@@ -110,22 +130,31 @@ function proxemics(context) {
           // This is the interesting situation. Both devices are in the database and the scanning device is detecting a different device.
           // Moreover, check if the detected device is also detecting the scanned device.
           return Promise.all([
+            context.app.service('beacon-logs').find({
+              query: {
+                _aggregate: [
+                  { $match: { updatedAt: { $gt: new Date(new Date().getTime() - context.app.get('beacons').maxInactivityTime) } } },
+                  {
+                    $group: {
+                      _id: { beaconKey: "$beaconKey", deviceUuid: "$deviceUuid" },
+                      avgRssi: { $avg: "$beacon.rssi" },
+                      beacons: { $push: "$$ROOT" }
+                    }
+                  },
+                  { $match: { avgRssi: { $gt: -100 } } },
+                  { $project: { _id: 1, avgRssi: 1, avgDistance: { $literal: null }, beacons: 1 } }
+                ]
+              }
+            }),
+            /** TODO: Remove this once the call above has been more thoroughly tested. **
             context.app.service('beacons').find({
               query: {
                 $limit: 1,
-                /**
-                 * TODO:
-                 * This is just a sanity check to ensure that I don't get any old beacon entries that may happen to be laying around on the database.
-                 * However, I should probably implement stronger mechanisms to ensure consistency. Right now, if the client has some hiccup while deleting a beacon there may be old data left behind at the server.
-                 * I should also probably add a new hook that actually deletes old beacons before new ones are added. 
-                 */
-                updatedAt: {
-                  $gt: new Date().getTime() - BEACONS_MAX_INACTIVITY_TIMER
-                },
+                updatedAt: { $gt: new Date().getTime() - BEACONS_MAX_INACTIVITY_TIMER },
                 deviceUuid: detectedDevice.deviceUuid,
                 'beacon.values': scanningDevice.beaconValues
               }
-            }),
+            })*/
             context.app.service('proxemics').find({
               query: {
                 $limit: 1,
@@ -175,10 +204,10 @@ module.exports = {
     all: [],
     find: [canReadEntity],
     get: [canReadEntity],
-    create: [proxemics],
-    update: [proxemics],
-    patch: [proxemics],
-    remove: [proxemics]
+    create: [logBeacons, proxemics],
+    update: [logBeacons, proxemics],
+    patch: [logBeacons, proxemics],
+    remove: [logBeacons, proxemics]
   },
   error: {
     all: [],

@@ -9,7 +9,8 @@ module.exports = function (app) {
   const resources = new Schema({
     user: { type: Schema.Types.ObjectId, ref: 'users', required: true },
     client: { type: Schema.Types.ObjectId, ref: 'clients', required: true },
-    data: { type: Object, default: {} }
+    data: { type: Object, default: {} },
+    brokerName: { type: String, required: true, default: app.get('name') }
   }, { timestamps: true, minimize: false });
   resources.index({ user: 1, client: 1 }, { unique: true });
   

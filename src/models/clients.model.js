@@ -6,7 +6,8 @@ module.exports = function (app) {
   const mongooseClient = app.get('mongooseClient');
   const { Schema } = mongooseClient;
   const clients = new Schema({
-    id: { type: String, required: true, unique: true }
+    id: { type: String, required: true, unique: true },
+    brokerName: { type: String, required: true, default: app.get('name') }
   }, { timestamps: true, minimize: false });
 
   return mongooseClient.model('clients', clients);
