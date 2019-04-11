@@ -51,9 +51,9 @@
     "feathers-mongoose": "^7.3.2",
     "helmet": "^3.16.0",
     "lodash": "^4.17.11",
-    "mongodb": "^3.2.2",
-    "mongodb-core": "^3.2.2",
-    "mongoose": "^5.4.21",
+    "mongodb": "^3.2.3",
+    "mongodb-core": "^3.2.3",
+    "mongoose": "^5.5.0",
     "passport-custom": "^1.0.5",
     "serve-favicon": "^2.5.0",
     "uuid": "^3.3.2",
@@ -63,8 +63,8 @@
   "devDependencies": {
     "ajv": "^6.10.0",
     "eslint": "^5.16.0",
-    "mocha": "^6.0.2",
-    "nodemon": "^1.18.10",
+    "mocha": "^6.1.2",
+    "nodemon": "^1.18.11",
     "request": "^2.88.0",
     "request-promise": "^4.2.4"
   }
