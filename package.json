@@ -53,18 +53,18 @@
     "lodash": "^4.17.11",
     "mongodb": "^3.2.3",
     "mongodb-core": "^3.2.3",
-    "mongoose": "^5.5.4",
+    "mongoose": "^5.5.5",
     "passport-custom": "^1.0.5",
     "serve-favicon": "^2.5.0",
     "uuid": "^3.3.2",
     "winston": "^3.2.1",
-    "ws": "^6.2.1"
+    "ws": "^7.0.0"
   },
   "devDependencies": {
     "ajv": "^6.10.0",
     "eslint": "^5.16.0",
     "mocha": "^6.1.4",
-    "nodemon": "^1.18.11",
+    "nodemon": "^1.19.0",
     "request": "^2.88.0",
     "request-promise": "^4.2.4"
   }
