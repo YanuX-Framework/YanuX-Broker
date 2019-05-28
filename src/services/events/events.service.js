@@ -3,13 +3,11 @@ const createService = require('./events.class.js');
 const hooks = require('./events.hooks');
 
 module.exports = function (app) {
-  const events = ['proxemics'];
   /* const paginate = app.get('paginate'); */
 
   const options = {
-    events,
     /* paginate */
-    multi: true
+    /* multi: true */
   };
 
   // Initialize our service with any options it requires

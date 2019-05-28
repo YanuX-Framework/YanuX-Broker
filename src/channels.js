@@ -51,24 +51,23 @@ module.exports = function (app) {
     } else if (data && data.client) {
       channel = app.channel(`clients/${data.client._id ? data.client._id : data.client}`);
     } else {
-      channel = app.channel(channel);
+      channel = app.channel(app.channels);
     }
-
     if (context.params && context.params.connection && context.params.connection.user) {
-      return channel.filter(connection =>
-        connection.user._id.toString() === (context.params.connection.user._id.toString()));
+      return channel.filter(connection => connection.user ?
+        connection.user._id.toString() === (context.params.connection.user._id.toString()) : false);
     } if (data && data.user) {
-      return channel.filter(connection =>
-        connection.user._id.toString() === (data.user._id ? data.user._id : data.user).toString());
+      return channel.filter(connection => connection.user ?
+        connection.user._id.toString() === (data.user._id ? data.user._id : data.user).toString() : false);
     } else if (context.data && context.data.user) {
-      return channel.filter(connection =>
-        connection.user._id.toString() === (context.data.user._id ? context.data.user._id : context.data.user).toString());
+      return channel.filter(connection => connection.user ?
+        connection.user._id.toString() === (context.data.user._id ? context.data.user._id : context.data.user).toString() : false);
     } else if (context.result && context.result.user) {
-      return channel.filter(connection =>
-        connection.user._id.toString() === (context.result.user._id ? context.result.user._id : context.result.user).toString());
+      return channel.filter(connection => connection.user ?
+        connection.user._id.toString() === (context.result.user._id ? context.result.user._id : context.result.user).toString() : false);
     } else if (context.params && context.params.query && context.params.query.user) {
-      return channel.filter(connection =>
-        connection.user._id.toString() === (context.params.query.user._id ? context.params.query.user._id : context.params.query.user).toString());
+      return channel.filter(connection => connection.user ?
+        connection.user._id.toString() === (context.params.query.user._id ? context.params.query.user._id : context.params.query.user).toString() : false);
     }
 
     return channel;
