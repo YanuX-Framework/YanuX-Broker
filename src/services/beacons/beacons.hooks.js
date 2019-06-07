@@ -133,7 +133,13 @@ function proxemics(context) {
             context.app.service('beacon-logs').find({
               query: {
                 _aggregate: [
-                  { $match: { updatedAt: { $gt: new Date(new Date().getTime() - context.app.get('beacons').maxInactivityTime) } } },
+                  {
+                    $match: {
+                      updatedAt: { $gt: new Date(new Date().getTime() - context.app.get('beacons').maxInactivityTime) },
+                      deviceUuid: detectedDevice.deviceUuid,
+                      'beacon.values': scanningDevice.beaconValues
+                    }
+                  },
                   {
                     $group: {
                       _id: { beaconKey: "$beaconKey", deviceUuid: "$deviceUuid" },
@@ -142,7 +148,8 @@ function proxemics(context) {
                     }
                   },
                   { $match: { avgRssi: { $gt: -100 } } },
-                  { $project: { _id: 1, avgRssi: 1, avgDistance: { $literal: null }, beacons: 1 } }
+                  { $project: { _id: 1, avgRssi: 1, avgDistance: { $literal: null }, beacons: 1 } },
+                  { $limit: 1 }
                 ]
               }
             }),
