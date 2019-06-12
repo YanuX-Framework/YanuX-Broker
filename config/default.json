@@ -44,6 +44,6 @@
     }
   },
   "beacons": {
-    "maxInactivityTime": 5000
+    "maxInactivityTime": 2000
   }
 }

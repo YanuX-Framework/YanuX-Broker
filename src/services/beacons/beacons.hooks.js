@@ -73,13 +73,13 @@ function beforePatchUpdate(context) {
   }
 }
 
-function proxemics(context) {
+function updateProxemics(context) {
   if (context.type !== 'after') {
     throw new Error('This must be run as an \'after\' hook.')
   }
   // TODO: **FINISH** implementing proxemics notifications.
   // Only run the "meat" of this hook for external requests!
-  if (context.params.provider) {
+  if (context.params.provider && (context.method === 'create' || context.method === 'patch' || context.method === 'update' || context.method === 'remove')) {
     let scanningDevice, detectedDevice, deviceUuid, detectedBeacon;
     if (context.data) {
       deviceUuid = context.data.deviceUuid;
@@ -96,103 +96,96 @@ function proxemics(context) {
     if (!deviceUuid || !detectedBeacon) {
       return context;
     }
-    if (
-      context.method === 'create' ||
-      context.method === 'patch' ||
-      context.method === 'remove') {
-      /** 
-       * NOTE: 
-       * I'm not sure if this is the best idea to make sure that a proxemics record is ALWAYS present for the current user. 
-       * But it's working fine right now. 
-       */
-      return new Promise((resolve, reject) => {
-        context.app.service('proxemics')
-          .create({ user: context.params.user._id })
-          .then(proxemics => { resolve(proxemics) })
-          .catch(e => {
-            if (e instanceof Conflict) {
-              resolve();
-            } else {
-              reject();
-            }
-          });
-      }).then(() => Promise.all([
-        context.app.service('devices').find({ query: { $limit: 1, deviceUuid: deviceUuid } }),
-        context.app.service('devices').find({ query: { $limit: 1, beaconValues: detectedBeacon.values } })
-      ])).then(devices => {
-        scanningDevice = (devices[0].data ? devices[0].data : devices[0])[0];
-        detectedDevice = (devices[1].data ? devices[1].data : devices[1])[0];
-        if (!scanningDevice || !detectedDevice) {
-          // If either of the devices is missing from the database it's either an error or there's nothing to do with them.
-          throw new Error('Either the scanning device or the detected device are absent from the database.');
-        } else if (!scanningDevice._id.equals(detectedDevice._id)) {
-          // It's natural that the scanning device is able to detect itself whenever you're using "external beacons".
-          // This is the interesting situation. Both devices are in the database and the scanning device is detecting a different device.
-          // Moreover, check if the detected device is also detecting the scanned device.
-          return Promise.all([
-            context.app.service('beacon-logs').find({
-              query: {
-                _aggregate: [
-                  {
-                    $match: {
-                      updatedAt: { $gt: new Date(new Date().getTime() - context.app.get('beacons').maxInactivityTime) },
-                      deviceUuid: detectedDevice.deviceUuid,
-                      'beacon.values': scanningDevice.beaconValues
-                    }
-                  },
-                  {
-                    $group: {
-                      _id: { beaconKey: "$beaconKey", deviceUuid: "$deviceUuid" },
-                      avgRssi: { $avg: "$beacon.rssi" },
-                      beacons: { $push: "$$ROOT" }
-                    }
-                  },
-                  { $match: { avgRssi: { $gt: -100 } } },
-                  { $project: { _id: 1, avgRssi: 1, avgDistance: { $literal: null }, beacons: 1 } },
-                  { $limit: 1 }
-                ]
-              }
-            }),
-            /** TODO: Remove this once the call above has been more thoroughly tested. **
-            context.app.service('beacons').find({
-              query: {
-                $limit: 1,
-                updatedAt: { $gt: new Date().getTime() - BEACONS_MAX_INACTIVITY_TIMER },
-                deviceUuid: detectedDevice.deviceUuid,
-                'beacon.values': scanningDevice.beaconValues
-              }
-            })*/
-            context.app.service('proxemics').find({
-              query: {
-                $limit: 1,
-                user: context.params.user._id
-              }
-            })
-          ]);
-        }
-      }).then(result => {
-        if (result) {
-          const beacon = (result[0].data ? result[0].data : result[0])[0];
-          const currProxemics = (result[1].data ? result[1].data : result[1])[0];
-          if (currProxemics) {
-            let proxemics = {
-              user: context.params.user._id,
-              state: _.cloneDeep(currProxemics.state) || {}
-            }
-            if (beacon && (context.method === 'create' || context.method === 'patch')) {
-              proxemics.state[detectedDevice.deviceUuid] = detectedDevice.capabilities;
-            } else {
-              delete proxemics.state[detectedDevice.deviceUuid];
-            }
-            if (!_.isEqual(currProxemics.state, proxemics.state)) {
-              return context.app.service('proxemics').update(currProxemics._id, proxemics);
-            }
+    /** 
+     * NOTE: 
+     * I'm not sure if this is the best idea to make sure that a proxemics record is ALWAYS present for the current user. 
+     * But it's working fine right now. 
+     */
+    return new Promise((resolve, reject) => {
+      context.app.service('proxemics')
+        .create({ user: context.params.user._id })
+        .then(proxemics => { resolve(proxemics) })
+        .catch(e => {
+          if (e instanceof Conflict) {
+            resolve();
           } else {
-            throw new Error('Current proxemics state is missing.');
+            reject();
           }
+        });
+    }).then(() => Promise.all([
+      context.app.service('devices').find({ query: { $limit: 1, deviceUuid: deviceUuid } }),
+      context.app.service('devices').find({ query: { $limit: 1, beaconValues: detectedBeacon.values } })
+    ])).then(devices => {
+      scanningDevice = (devices[0].data ? devices[0].data : devices[0])[0];
+      detectedDevice = (devices[1].data ? devices[1].data : devices[1])[0];
+      if (!scanningDevice || !detectedDevice) {
+        // If either of the devices is missing from the database it's either an error or there's nothing to do with them.
+        throw new Error('Either the scanning device or the detected device are absent from the database.');
+      } else if (!scanningDevice._id.equals(detectedDevice._id)) {
+        return Promise.all([
+          context.app.service('beacon-logs').find({
+            query: {
+              _aggregate: [
+                {
+                  $match: {
+                    deviceUuid: detectedDevice.deviceUuid,
+                    'beacon.values': scanningDevice.beaconValues,
+                    updatedAt: { $gt: new Date(new Date().getTime() - context.app.get('beacons').maxInactivityTime) },
+                    $or: [{ method: 'create' }, { method: 'update' }, { method: 'patch' }]
+                  }
+                },
+                {
+                  $group: {
+                    _id: { deviceUuid: "$deviceUuid" },
+                    avgRssi: { $avg: "$beacon.rssi" },
+                    beacons: { $push: "$$ROOT" }
+                  }
+                },
+                { $match: { avgRssi: { $gt: -100 } } },
+                { $project: { _id: 1, avgRssi: 1, avgDistance: { $literal: null }, beacons: 1 } },
+              ]
+            }
+          }),
+          context.app.service('proxemics').find({
+            query: {
+              $limit: 1,
+              user: context.params.user._id
+            }
+          })
+        ]);
+      }
+    }).then(result => {
+      if (result) {
+        const beacon = (result[0].data ? result[0].data : result[0])[0];
+        const currProxemics = (result[1].data ? result[1].data : result[1])[0];
+        if (currProxemics) {
+          const proxemics = {
+            user: context.params.user._id,
+            state: _.cloneDeep(currProxemics.state) || {}
+          }
+          if (beacon && (context.method === 'create' || context.method === 'update' || context.method === 'patch')) {
+            proxemics.state[detectedDevice.deviceUuid] = detectedDevice.capabilities;
+          } else {
+            delete proxemics.state[detectedDevice.deviceUuid];
+          }
+          /* 
+           * NOTE: 
+           * This is kind of a hack that enables the devices to have a smaller inactivity timer than the server. 
+           * I'm not sure if I want to keep it around! 
+           */
+          /*else { 
+            setTimeout(() => {
+              updateProxemics(context);
+            }, context.app.get('beacons').maxInactivityTime);
+          }*/
+          if (!_.isEqual(currProxemics.state, proxemics.state)) {
+            return context.app.service('proxemics').update(currProxemics._id, proxemics);
+          }
+        } else {
+          throw new Error('Current proxemics state is missing.');
         }
-      }).then(() => context).catch(e => { throw e; });
-    }
+      }
+    }).then(() => context).catch(e => { throw e; });
   }
   return context;
 }
@@ -211,10 +204,10 @@ module.exports = {
     all: [],
     find: [canReadEntity],
     get: [canReadEntity],
-    create: [logBeacons, proxemics],
-    update: [logBeacons, proxemics],
-    patch: [logBeacons, proxemics],
-    remove: [logBeacons, proxemics]
+    create: [logBeacons, updateProxemics],
+    update: [logBeacons, updateProxemics],
+    patch: [logBeacons, updateProxemics],
+    remove: [logBeacons, updateProxemics]
   },
   error: {
     all: [],
