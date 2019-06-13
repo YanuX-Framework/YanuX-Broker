@@ -77,9 +77,12 @@ function updateProxemics(context) {
   if (context.type !== 'after') {
     throw new Error('This must be run as an \'after\' hook.')
   }
+  if (context.method !== 'create' && context.method !== 'patch' && context.method !== 'update' && context.method !== 'remove') {
+    return context;
+  }
   // TODO: **FINISH** implementing proxemics notifications.
   // Only run the "meat" of this hook for external requests!
-  if (context.params.provider && (context.method === 'create' || context.method === 'patch' || context.method === 'update' || context.method === 'remove')) {
+  if (context.params.provider) {
     let scanningDevice, detectedDevice, deviceUuid, detectedBeacon;
     if (context.data) {
       deviceUuid = context.data.deviceUuid;
@@ -122,14 +125,21 @@ function updateProxemics(context) {
         // If either of the devices is missing from the database it's either an error or there's nothing to do with them.
         throw new Error('Either the scanning device or the detected device are absent from the database.');
       } else if (!scanningDevice._id.equals(detectedDevice._id)) {
+        return context.app.service('proxemics').find({
+          query: {
+            $limit: 1,
+            user: context.params.user._id
+          }
+        });
+        /*
         return Promise.all([
           context.app.service('beacon-logs').find({
             query: {
               _aggregate: [
                 {
                   $match: {
-                    deviceUuid: detectedDevice.deviceUuid,
-                    'beacon.values': scanningDevice.beaconValues,
+                    deviceUuid: scanningDevice.deviceUuid,
+                    'beacon.values': detectedDevice.beaconValues,
                     updatedAt: { $gt: new Date(new Date().getTime() - context.app.get('beacons').maxInactivityTime) },
                     $or: [{ method: 'create' }, { method: 'update' }, { method: 'patch' }]
                   }
@@ -141,7 +151,7 @@ function updateProxemics(context) {
                     beacons: { $push: "$$ROOT" }
                   }
                 },
-                { $match: { avgRssi: { $gt: -100 } } },
+                { $match: { avgRssi: { $gt: -1000 } } },
                 { $project: { _id: 1, avgRssi: 1, avgDistance: { $literal: null }, beacons: 1 } },
               ]
             }
@@ -153,31 +163,23 @@ function updateProxemics(context) {
             }
           })
         ]);
+        */
       }
     }).then(result => {
       if (result) {
-        const beacon = (result[0].data ? result[0].data : result[0])[0];
-        const currProxemics = (result[1].data ? result[1].data : result[1])[0];
+        //const beacon = (result[0].data ? result[0].data : result[0])[0];
+        //const currProxemics = (result[1].data ? result[1].data : result[1])[0];
+        const currProxemics = (result.data ? result.data : result)[0];
         if (currProxemics) {
           const proxemics = {
             user: context.params.user._id,
             state: _.cloneDeep(currProxemics.state) || {}
           }
-          if (beacon && (context.method === 'create' || context.method === 'update' || context.method === 'patch')) {
-            proxemics.state[detectedDevice.deviceUuid] = detectedDevice.capabilities;
-          } else {
+          if (context.method === 'remove') {
             delete proxemics.state[detectedDevice.deviceUuid];
+          } else {
+            proxemics.state[detectedDevice.deviceUuid] = detectedDevice.capabilities;
           }
-          /* 
-           * NOTE: 
-           * This is kind of a hack that enables the devices to have a smaller inactivity timer than the server. 
-           * I'm not sure if I want to keep it around! 
-           */
-          /*else { 
-            setTimeout(() => {
-              updateProxemics(context);
-            }, context.app.get('beacons').maxInactivityTime);
-          }*/
           if (!_.isEqual(currProxemics.state, proxemics.state)) {
             return context.app.service('proxemics').update(currProxemics._id, proxemics);
           }
@@ -204,10 +206,10 @@ module.exports = {
     all: [],
     find: [canReadEntity],
     get: [canReadEntity],
-    create: [logBeacons, updateProxemics],
-    update: [logBeacons, updateProxemics],
-    patch: [logBeacons, updateProxemics],
-    remove: [logBeacons, updateProxemics]
+    create: [/* logBeacons, */ updateProxemics],
+    update: [/* logBeacons, */ updateProxemics],
+    patch: [/* logBeacons, */ updateProxemics],
+    remove: [/* logBeacons, */ updateProxemics]
   },
   error: {
     all: [],
