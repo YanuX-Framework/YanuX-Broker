@@ -131,39 +131,47 @@ function updateProxemics(context) {
             user: context.params.user._id
           }
         });
-        /*
-        return Promise.all([
-          context.app.service('beacon-logs').find({
-            query: {
-              _aggregate: [
-                {
-                  $match: {
-                    deviceUuid: scanningDevice.deviceUuid,
-                    'beacon.values': detectedDevice.beaconValues,
-                    updatedAt: { $gt: new Date(new Date().getTime() - context.app.get('beacons').maxInactivityTime) },
-                    $or: [{ method: 'create' }, { method: 'update' }, { method: 'patch' }]
-                  }
-                },
-                {
-                  $group: {
-                    _id: { deviceUuid: "$deviceUuid" },
-                    avgRssi: { $avg: "$beacon.rssi" },
-                    beacons: { $push: "$$ROOT" }
-                  }
-                },
-                { $match: { avgRssi: { $gt: -1000 } } },
-                { $project: { _id: 1, avgRssi: 1, avgDistance: { $literal: null }, beacons: 1 } },
-              ]
-            }
-          }),
-          context.app.service('proxemics').find({
-            query: {
-              $limit: 1,
-              user: context.params.user._id
-            }
-          })
-        ]);
-        */
+        // return Promise.all([
+        //   context.app.service('beacon-logs').find({
+        //     query: {
+        //       _aggregate: [
+        //         {
+        //           $match: {
+        //             deviceUuid: scanningDevice.deviceUuid,
+        //             'beacon.values': detectedDevice.beaconValues,
+        //             updatedAt: { $gt: new Date(new Date().getTime() - context.app.get('beacons').maxInactivityTime) },
+        //             $or: [{ method: 'create' }, { method: 'update' }, { method: 'patch' }]
+        //           }
+        //         },
+        //         {
+        //           $group: {
+        //             _id: { deviceUuid: "$deviceUuid" },
+        //             avgRssi: { $avg: "$beacon.rssi" },
+        //             beacons: { $push: "$$ROOT" }
+        //           }
+        //         },
+        //         { $match: { avgRssi: { $gt: -1000 } } },
+        //         { $project: { _id: 1, avgRssi: 1, avgDistance: { $literal: null }, beacons: 1 } },
+        //       ]
+        //     }
+        //   }),
+        // // TODO: Remove this once the call above has been more thoroughly tested. */
+        // // context.app.service('beacons').find({
+        // //  query: {
+        // //    $limit: 1,
+        // //    updatedAt: { $gt: new Date().getTime() - context.app.get('beacons').maxInactivityTime },
+        // //    deviceUuid: detectedDevice.deviceUuid,
+        // //    'beacon.values': scanningDevice.beaconValues
+        // //  }
+        // //})
+        //   context.app.service('proxemics').find({
+        //     query: {
+        //       $limit: 1,
+        //       user: context.params.user._id
+        //     }
+        //   })
+        // ]);
+
       }
     }).then(result => {
       if (result) {
