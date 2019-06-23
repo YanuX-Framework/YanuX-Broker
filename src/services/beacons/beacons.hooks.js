@@ -99,6 +99,7 @@ function updateProxemics(context) {
     if (!deviceUuid || !detectedBeacon) {
       return context;
     }
+
     /** 
      * NOTE: 
      * I'm not sure if this is the best idea to make sure that a proxemics record is ALWAYS present for the current user. 
@@ -109,11 +110,8 @@ function updateProxemics(context) {
         .create({ user: context.params.user._id })
         .then(proxemics => { resolve(proxemics) })
         .catch(e => {
-          if (e instanceof Conflict) {
-            resolve();
-          } else {
-            reject();
-          }
+          if (e instanceof Conflict) { resolve(); } 
+          else { reject(); }
         });
     }).then(() => Promise.all([
       context.app.service('devices').find({ query: { $limit: 1, deviceUuid: deviceUuid } }),
@@ -131,6 +129,23 @@ function updateProxemics(context) {
             user: context.params.user._id
           }
         });
+        // return Promise.all([
+        //   context.app.service('beacons').find({
+        //     query: {
+        //       $limit: 1,
+        //       updatedAt: { $gt: new Date().getTime() - context.app.get('beacons').maxInactivityTime },
+        //       deviceUuid: detectedDevice.deviceUuid,
+        //       'beacon.values': scanningDevice.beaconValues
+        //     }
+        //   }),
+        //   context.app.service('proxemics').find({
+        //     query: {
+        //       $limit: 1,
+        //       user: context.params.user._id
+        //     }
+        //   })
+        // ])
+
         // return Promise.all([
         //   context.app.service('beacon-logs').find({
         //     query: {
@@ -155,15 +170,6 @@ function updateProxemics(context) {
         //       ]
         //     }
         //   }),
-        // // TODO: Remove this once the call above has been more thoroughly tested. */
-        // // context.app.service('beacons').find({
-        // //  query: {
-        // //    $limit: 1,
-        // //    updatedAt: { $gt: new Date().getTime() - context.app.get('beacons').maxInactivityTime },
-        // //    deviceUuid: detectedDevice.deviceUuid,
-        // //    'beacon.values': scanningDevice.beaconValues
-        // //  }
-        // //})
         //   context.app.service('proxemics').find({
         //     query: {
         //       $limit: 1,
@@ -171,19 +177,18 @@ function updateProxemics(context) {
         //     }
         //   })
         // ]);
-
       }
     }).then(result => {
       if (result) {
+        const currProxemics = (result.data ? result.data : result)[0];
         //const beacon = (result[0].data ? result[0].data : result[0])[0];
         //const currProxemics = (result[1].data ? result[1].data : result[1])[0];
-        const currProxemics = (result.data ? result.data : result)[0];
         if (currProxemics) {
           const proxemics = {
             user: context.params.user._id,
             state: _.cloneDeep(currProxemics.state) || {}
           }
-          if (context.method === 'remove') {
+          if (context.method === 'remove' || detectedBeacon.avgRssi < context.app.get('beacons').avgRssiThreshold) {
             delete proxemics.state[detectedDevice.deviceUuid];
           } else {
             proxemics.state[detectedDevice.deviceUuid] = detectedDevice.capabilities;
