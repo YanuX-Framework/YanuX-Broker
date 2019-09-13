@@ -34,8 +34,8 @@ const checkOwnership = context => entity => {
 }
 
 /**
- * NOTE: In both of the hooks below I'm assuming that if no 'context.params.payload.userId' or
- * 'context.params.payload.clientId' is set, it means that the JWT was willingly set by the Broker
+ * NOTE: In both of the hooks below I'm assuming that if no 'context.params.user.user._id' or
+ * 'context.params.client._id' is set, it means that the JWT was willingly set by the Broker
  * to allow access to any resource. However, I may change this assumption in the future as I tighten
  * up the security policies.
  */

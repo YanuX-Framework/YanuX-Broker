@@ -20,9 +20,9 @@
       "header": {
         "typ": "access"
       },
-      "audience": "https://yourdomain.com",
-      "issuer": "feathers",
-      "algorithm": "HS256",
+      "audience": "https://www.yanux.org",
+      "issuer": "YanuX-Broker",
+      "algorithm": "RS256",
       "expiresIn": "1d"
     },
     "local": {
