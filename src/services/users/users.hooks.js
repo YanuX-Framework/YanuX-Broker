@@ -8,12 +8,12 @@ const canWriteEntity = require('../../hooks/authorization').canWriteEntity
 module.exports = {
   before: {
     all: [],
-    find: [authenticate('jwt')],
-    get: [authenticate('jwt')],
-    create: [disallow('external'), canWriteEntity, hashPassword()],
-    update: [disallow('external'), canWriteEntity, hashPassword(), authenticate('jwt')],
-    patch: [disallow('external'), canWriteEntity, hashPassword(), authenticate('jwt')],
-    remove: [disallow('external'), canWriteEntity, authenticate('jwt')]
+    find: [authenticate('jwt', 'yanux')],
+    get: [authenticate('jwt', 'yanux')],
+    create: [disallow('external'), canWriteEntity, hashPassword('password')],
+    update: [disallow('external'), canWriteEntity, hashPassword('password'), authenticate('jwt', 'yanux')],
+    patch: [disallow('external'), canWriteEntity, hashPassword('password'), authenticate('jwt', 'yanux')],
+    remove: [disallow('external'), canWriteEntity, authenticate('jwt', 'yanux')]
   },
 
   after: {

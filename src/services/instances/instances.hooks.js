@@ -59,7 +59,7 @@ function afterCreate(context) {
 
 module.exports = {
   before: {
-    all: [authenticate('jwt')],
+    all: [authenticate('jwt', 'yanux')],
     find: [],
     get: [],
     create: [canWriteEntity, beforeCreate],

@@ -9,23 +9,33 @@
   },
   "mongodb": "mongodb://localhost:27017/yanux-broker",
   "authentication": {
-    "entity": "user",
-    "service": "users",
-    "authStrategies": [
+    "secret": null,
+    "strategies": [
       "jwt",
       "local",
       "yanux"
     ],
-    "jwtOptions": {
+    "path": "/authentication",
+    "service": "users",
+    "session": true,
+    "cookie": {
+      "enabled": true,
+      "name": "feathers-jwt",
+      "httpOnly": false,
+      "secure": false
+    },
+    "jwt": {
       "header": {
         "typ": "access"
       },
-      "audience": "https://yourdomain.com",
+      "audience": "https://www.yanux.org",
+      "subject": "anonymous",
       "issuer": "feathers",
-      "algorithm": "HS256",
+      "algorithm": "RS256",
       "expiresIn": "1d"
     },
     "local": {
+      "entity": "user",
       "usernameField": "email",
       "passwordField": "password"
     },

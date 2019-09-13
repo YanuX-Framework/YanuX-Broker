@@ -13,21 +13,21 @@ const checkOwnership = context => entity => {
         context.service.Model &&
         context.service.Model.modelName === 'users' &&
         context.params &&
-        context.params.payload &&
-        context.params.payload.userId &&
+        context.params.user &&
+        context.params.user._id &&
         entity &&
         entity._id &&
-        entity._id.toString() === context.params.payload.userId.toString()) {
+        entity._id.toString() === context.params.user._id.toString()) {
         return true;
     } else if (
         entity &&
         entity.user &&
         context.params &&
-        context.params.payload &&
-        context.params.payload.userId &&
-        entity.user.toString() === context.params.payload.userId.toString()) {
-        if (entity.client && context.params.payload.clientId) {
-            return entity.client.toString() === context.params.payload.clientId.toString();
+        context.params.user &&
+        context.params.user._id &&
+        entity.user.toString() === context.params.user._id.toString()) {
+        if (entity.client && context.params.client && context.params.client._id) {
+            return entity.client.toString() === context.params.client._id.toString();
         } else return true;
     }
     return false;

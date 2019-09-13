@@ -5,7 +5,7 @@ const canWriteEntity = require('../../hooks/authorization').canWriteEntity
 
 module.exports = {
   before: {
-    all: [authenticate('jwt')],
+    all: [authenticate('jwt', 'yanux')],
     find: [],
     get: [],
     create: [canWriteEntity],

@@ -1,30 +1,24 @@
 const path = require('path');
 const fs = require('fs');
-const authentication = require('@feathersjs/authentication');
-const jwt = require('@feathersjs/authentication-jwt');
-const local = require('@feathersjs/authentication-local');
-const yanux = require('./auth/yanux');
 
-module.exports = function (app) {
+const { JWTStrategy } = require('@feathersjs/authentication');
+const { YanuxAuthenticationService, YanuxStrategy } = require('./auth/yanux');
+
+const { LocalStrategy } = require('@feathersjs/authentication-local');
+const { expressOauth } = require('@feathersjs/authentication-oauth');
+
+module.exports = app => {
   const config = app.get('authentication');
   const privateKey = fs.readFileSync(path.join(__dirname,'..','keys','combined.pem'), 'utf8');
   config.secret = privateKey;
-  // Set up authentication with the secret
-  app.configure(authentication(config));
-  app.configure(jwt());
-  app.configure(local());
-  app.configure(yanux());
-  // The `authentication` service is used to create a JWT.
-  // The before `create` hook registers strategies that can be used
-  // to create a new valid JWT (e.g. local or oauth2)
-  app.service('authentication').hooks({
-    before: {
-      create: [
-        authentication.hooks.authenticate(config.strategies)
-      ],
-      remove: [
-        authentication.hooks.authenticate('jwt')
-      ]
-    }
-  });
+  app.set('authentication', config);
+  
+  const authentication = new YanuxAuthenticationService(app);
+
+  authentication.register('jwt', new JWTStrategy());
+  authentication.register('local', new LocalStrategy());
+  authentication.register('yanux', new YanuxStrategy());
+
+  app.use('/authentication', authentication);
+  app.configure(expressOauth());
 };

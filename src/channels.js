@@ -50,7 +50,7 @@ module.exports = function (app) {
       channel = app.channel(`clients/${data._id}`);
     } else if (data && data.client) {
       channel = app.channel(`clients/${data.client._id ? data.client._id : data.client}`);
-    } else {
+    } else if(app.channels.length > 0) {
       channel = app.channel(app.channels);
     }
     if (context.params && context.params.connection && context.params.connection.user) {

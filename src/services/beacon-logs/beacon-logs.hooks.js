@@ -22,7 +22,7 @@ function aggregation(context) {
 
 module.exports = {
   before: {
-    all: [disallow('external'), authenticate('jwt'), clean],
+    all: [disallow('external'), authenticate('jwt', 'yanux'), clean],
     find: [aggregation],
     get: [],
     create: [],
