@@ -64,7 +64,7 @@ function beforePatchUpdate(context) {
             context.result = [data];
             return context;
           }).catch(e => { throw e; });
-        } else if (beacons.every(b => beacon.timestamp > b.beacon.timestamp)) {
+        } else if (beacons.every(b => beacon.timestamp >= b.beacon.timestamp)) {
           return context;
         } else {
           throw new Error('The new beacon\'s timestamp is older than the one(s) already stored.');
