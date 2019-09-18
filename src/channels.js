@@ -2,7 +2,78 @@ module.exports = function (app) {
   if (typeof app.channel !== 'function') {
     // If no real-time functionality has been configured just return
     return;
-  }
+  };
+
+  const joinChannels = (user, connection) => {
+    Promise.all([
+      app.service('instances').find({ query: { user: user._id } }),
+      app.service('devices').find({ query: { user: user._id } })
+    ]).then(results => {
+      const instances = results[0]; const devices = results[1];
+      instances.forEach(instance => joinInstanceChannels(instance, connection));
+      devices.forEach(device => joinDeviceChannels(device, connection));
+    }).catch(e => { throw e });
+  };
+
+  const joinInstanceChannels = (instance, connection) => {
+    app.channel(`instances/${instance._id}`).join(connection);
+    app.channel(`users/${instance.user._id}`).join(connection);
+    app.channel(`clients/${instance.client._id}`).join(connection);
+    app.channel(`devices/${instance.device._id}`).join(connection);
+  };
+
+  const leaveInstanceChannels = instance => {
+    if (app.channels.length > 0) {
+      app.channel(app.channels).leave(connection =>
+        connection.user._id.equals(instance.user._id)
+      );
+    }
+  };
+
+  const updateInstanceChannels = instance => {
+    if (app.channels.length > 0) {
+      // Find all connections for this user
+      const { connections } = app.channel(app.channels).filter(connection => connection.user._id.equals(instance.user._id));
+      // Leave all channels
+      leaveInstanceChannels(instance);
+      // Re-join all channels with the updated user information
+      connections.forEach(connection => joinInstanceChannels(instance, connection));
+    }
+  };
+
+  app.service('instances').on('created', updateInstanceChannels);
+  app.service('instances').on('updated', updateInstanceChannels);
+  app.service('instances').on('patched', updateInstanceChannels);
+  app.service('instances').on('removed', leaveInstanceChannels);
+
+
+  const joinDeviceChannels = (device, connection) => {
+    app.channel(`devices/${device._id}`).join(connection);
+  };
+
+  const leaveDeviceChannels = device => {
+    if (app.channels.length > 0) {
+      app.channel(app.channels).leave(connection =>
+        connection.user._id.equals(device.user._id)
+      );
+    }
+  };
+  
+  const updateDeviceChannels = device => {
+    if (app.channels.length > 0) {
+      // Find all connections for this user
+      const { connections } = app.channel(app.channels).filter(connection => connection.user._id.equals(device.user._id));
+      // Leave all channels
+      leaveDeviceChannels(device);
+      // Re-join all channels with the updated user information
+      connections.forEach(connection => joinDeviceChannels(device, connection));
+    }
+  };
+
+  app.service('devices').on('created', updateDeviceChannels);
+  app.service('devices').on('updated', updateDeviceChannels);
+  app.service('devices').on('patched', updateDeviceChannels);
+  app.service('devices').on('removed', leaveDeviceChannels);
 
   app.on('connection', connection => {
     // On a new real-time connection, add it to the anonymous channel
@@ -21,75 +92,40 @@ module.exports = function (app) {
       app.channel('authenticated', 'users').join(connection);
       // Add the user to a its specific channel
       app.channel(`users/${user._id}`).join(connection);
-
-      // Channels can be named anything and joined on any condition 
-      // E.g. to send real-time events only to admins use
-      // if(user.isAdmin) { app.channel('admins').join(connection); }
-
-      // If the user has joined e.g. chat rooms
-      // if(Array.isArray(user.rooms)) user.rooms.forEach(room => app.channel(`rooms/${room.id}`).join(channel));
-
-      // Easily organize users by email and userid for things like messaging
-      // app.channel(`emails/${user.email}`).join(channel);
-      // app.channel(`userIds/$(user.id}`).join(channel);
+      joinChannels(user, connection);
     }
   });
-
-  // eslint-disable-next-line no-unused-vars
-  /* app.publish((data, hook) => {
-    // Here you can add event publishers to channels set up in `channels.js`
-    // To publish only for a specific event use `app.publish(eventname, () => {})`
-    console.log('Publishing all events to all authenticated users. See `channels.js` and https://docs.feathersjs.com/api/channels.html for more information.'); // eslint-disable-line
-    // e.g. to publish all service events to all authenticated users use
-    return app.channel('authenticated');
-  }); */
-
-  const genericPublish = (data, context) => {
-    let channel;
-    if (context.path === 'clients') {
-      channel = app.channel(`clients/${data._id}`);
-    } else if (data && data.client) {
-      channel = app.channel(`clients/${data.client._id ? data.client._id : data.client}`);
-    } else if(app.channels.length > 0) {
-      channel = app.channel(app.channels);
-    }
-    if (context.params && context.params.connection && context.params.connection.user) {
-      return channel.filter(connection => connection.user ?
-        connection.user._id.toString() === (context.params.connection.user._id.toString()) : false);
-    } if (data && data.user) {
-      return channel.filter(connection => connection.user ?
-        connection.user._id.toString() === (data.user._id ? data.user._id : data.user).toString() : false);
-    } else if (context.data && context.data.user) {
-      return channel.filter(connection => connection.user ?
-        connection.user._id.toString() === (context.data.user._id ? context.data.user._id : context.data.user).toString() : false);
-    } else if (context.result && context.result.user) {
-      return channel.filter(connection => connection.user ?
-        connection.user._id.toString() === (context.result.user._id ? context.result.user._id : context.result.user).toString() : false);
-    } else if (context.params && context.params.query && context.params.query.user) {
-      return channel.filter(connection => connection.user ?
-        connection.user._id.toString() === (context.params.query.user._id ? context.params.query.user._id : context.params.query.user).toString() : false);
-    }
-
-    return channel;
-  };
 
   app.on('logout', (authResult, { connection }) => {
     app.channel(app.channels).leave(connection);
     app.channel('anonymous').join(connection);
   })
 
-  // Publishing events from all events to the user specific channel.
-  app.publish(genericPublish);
+  const publisher = (data, context) => {
+    let channel;
+    if (context.path === 'clients') {
+      channel = app.channel(`clients/${data._id}`);
+    } else if (data && data.client) {
+      channel = app.channel(`clients/${data.client._id}`);
+    } else if (app.channels.length > 0) {
+      channel = app.channel(app.channels);
+    }
+    if (channel) {
+      if (context.params && context.params.connection && context.params.connection.user) {
+        return channel.filter(connection => connection.user ? connection.user._id.equals(context.params.connection.user._id) : false);
+      } if (data && data.user) {
+        return channel.filter(connection => connection.user ? connection.user._id.equals(data.user._id) : false);
+      } else if (context.data && context.data.user) {
+        return channel.filter(connection => connection.user ? connection.user._id.equals(context.data.user._id) : false);
+      } else if (context.result && context.result.user) {
+        return channel.filter(connection => connection.user ? connection.user._id.equals(context.result.user._id) : false);
+      } else if (context.params && context.params.query && context.params.query.user) {
+        return channel.filter(connection => connection.user ? connection.user._id.equals(context.params.query.user._id) : false);
+      }
+    }
+    return channel;
+  };
 
-  // Here you can also add service specific event publishers
-  // e.g. the publish the `users` service `created` event to the `admins` channel
-  // app.service('users').publish('created', () => app.channel('admins'));
+  app.publish(publisher);
 
-  // With the userid and email organization from above you can easily select involved users
-  // app.service('messages').publish(() => {
-  //   return [
-  //     app.channel(`userIds/${data.createdBy}`),
-  //     app.channel(`emails/${data.recipientEmail}`)
-  //   ];
-  // });
 };

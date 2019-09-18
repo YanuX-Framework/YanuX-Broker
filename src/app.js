@@ -36,8 +36,24 @@ app.use('/', express.static(app.get('public')));
 
 // Set up Plugins and providers
 app.configure(express.rest());
-app.configure(socketio());
-app.configure(primus({ transformer: 'websockets' }));
+app.configure(socketio(function (io) {
+    // Registering Socket.io middleware
+    io.use(function (socket, next) {
+        // Exposing the socket to services and hooks
+        socket.feathers.socket = socket;
+        next();
+    });
+}));
+
+app.configure(primus({
+    transformer: 'websockets'
+}, function (primus) {
+    // Do something with primus
+    primus.use('feathers-socket', function (req, res) {
+        // Exposing the requesting socket
+        req.feathers.socket = req;
+    });
+}));
 app.configure(mongodb);
 app.configure(mongoose);
 

@@ -24,14 +24,7 @@ function afterPatch(context) {
             context.result = [device];
             resolve(device)
           }).catch(e => reject(e));
-      } else {
-        resolve(context.result[0]);
-      }
-    }).then(device => {
-      if (context.params && context.params.connection && context.params.user && context.data) {
-        context.app.channel(`users/${context.params.user._id ? context.params.user._id : context.params.user}`).join(context.params.connection);
-        context.app.channel(`devices/${device._id ? device._id : device}`).join(context.params.connection)
-      }
+      } else { resolve(context); }
     }).catch(e => { throw e });
   } else return context;
 }
