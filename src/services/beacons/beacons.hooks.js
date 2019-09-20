@@ -13,7 +13,6 @@ function logBeacons(context) {
     } else {
       results = [context.result]
     }
-
     let promises = [];
     results.forEach(result => {
       const data = _.clone(result)
@@ -28,10 +27,7 @@ function logBeacons(context) {
 }
 
 function beforeCreate(context) {
-  if (
-    context.params.user &&
-    context.data.beaconKey &&
-    context.data.deviceUuid) {
+  if (context.params.user && context.data.beaconKey && context.data.deviceUuid) {
     const user = context.params.user;
     const beaconkey = context.data.beaconKey;
     const deviceUuid = context.data.deviceUuid;
@@ -126,7 +122,7 @@ function updateProxemics(context) {
             user: context.params.user._id
           }
         });
-        
+
         //-------------------//
         //---- SNIPPET 1 ----//
         //-------------------//

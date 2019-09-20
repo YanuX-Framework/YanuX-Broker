@@ -30,7 +30,11 @@
       "passwordField": "password"
     },
     "yanux": {
-      "url": "http://localhost:3001/api/verify_oauth2"
+      "url": "http://localhost:3001/api/verify_oauth2",
+      "usernameField": "email",
+      "clientsService": "clients",
+      "clientEntity": "client",
+      "clientIdField": "id"
     }
   },
   "beacons": {

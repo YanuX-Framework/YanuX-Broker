@@ -21,6 +21,10 @@ module.exports = function (app) {
       app.channel('authenticated', 'users').join(connection);
       // Add the user to a its specific channel
       app.channel(`users/${user._id}`).join(connection);
+      if (authResult.authentication && authResult.authentication.payload && authResult.authentication.payload.client) {
+        app.channel(`clients/${authResult.authentication.payload.client._id}`).join(connection);
+        app.channel(`users/${user._id}/clients/${authResult.authentication.payload.client._id}`).join(connection);
+      }
     }
   });
 
@@ -31,14 +35,15 @@ module.exports = function (app) {
 
   const publisher = (data, context) => {
     let channel;
-    // if (context.path === 'clients') {
-    //   channel = app.channel(`clients/${data._id}`);
-    // } else if (data && data.client) {
-    //   channel = app.channel(`clients/${data.client._id}`);
-    // } else if (data && data.user) {
-    //   channel = app.channel(`users/${data.user._id}`);
-    // } else 
-    if (app.channels.length > 0) {
+    if (context.path === 'clients') {
+      channel = app.channel(`clients/${data._id}`);
+    } else if (data && data.client && data.user) {
+      channel = app.channel(`users/${data.user._id}/clients/${data.client._id}`);
+    } else if (data && data.client) {
+      channel = app.channel(`clients/${data.client._id}`);
+    } else if (data && data.user) {
+      channel = app.channel(`users/${data.user._id}`);
+    } else if (app.channels.length > 0) {
       channel = app.channel(app.channels);
     }
     if (channel) {
@@ -53,9 +58,6 @@ module.exports = function (app) {
       } else if (context.params && context.params.query && context.params.query.user) {
         channel = channel.filter(connection => connection.user ? connection.user._id.equals(context.params.query.user._id) : false);
       }
-    }
-    if (context.path === 'resources') {
-      console.log(`PUBLISHING TO ${channel.connections.length} CONNECTIONS!`);
     }
     return channel;
   };

@@ -7,7 +7,13 @@ const request = require('request');
 module.exports = class YanuxStrategy extends AuthenticationBaseStrategy {
     verifyConfiguration() {
         const config = this.configuration;
-        ['url'].forEach(prop => {
+        [
+            'url',
+            'usernameField',
+            'clientsService',
+            'clientEntity',
+            'clientIdField'
+        ].forEach(prop => {
             if (typeof config[prop] !== 'string') {
                 throw new Error(`'${this.name}' authentication strategy requires a '${prop}' setting`);
             }
@@ -72,11 +78,11 @@ module.exports = class YanuxStrategy extends AuthenticationBaseStrategy {
         const { service, entity } = this.configuration;
 
         const usersService = this.app.service(service)
-        const clientsService = this.app.service('clients')
+        const usernameField = this.configuration.usernameField;
 
-        const usernameField = 'email';
-        const clientEntity = 'client'
-        const clientIdField = 'id';
+        const clientsService = this.app.service(this.configuration.clientsService)
+        const clientEntity = this.configuration.clientEntity;
+        const clientIdField = this.configuration.clientIdField;
 
         return new Promise((resolve, reject) => {
             request.get(this.configuration.url, { 'auth': { 'bearer': accessToken } }, (err, httpResponse, body) => {
