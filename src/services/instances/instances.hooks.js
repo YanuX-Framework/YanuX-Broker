@@ -9,6 +9,7 @@ function beforeCreate(context) {
   if (context.data) {
     context.data.instanceUuid = context.data.instanceUuid || uuidv4();
   }
+  return context;
 }
 
 function afterCreate(context) {
@@ -26,15 +27,29 @@ function afterCreate(context) {
     }
 
     if (context.params.provider === 'socketio') {
-      context.params.socket.on('disconnect', onDisconnect);
+      context.params._socket.on('disconnect', onDisconnect);
     }
     /**
      * TODO: Test if this works with a Primus-based client!
      */
     if (context.params.provider === 'primus') {
-      const connection = context.params.connection[primus.SOCKET_KEY];
-      connection.on('end', onDisconnect);
+      context.params._socket.on('end', onDisconnect);
     }
+
+    // if (context.params.connection) {
+    //   if (context.params && context.params.user) {
+    //     context.app.channel(`users/${context.params.user._id ? context.params.user._id : context.params.user}`).join(context.params.connection);
+    //   }
+    //   if (context.result) {
+    //     context.app.channel(`instances/${context.result._id ? context.result._id : context.result}`).join(context.params.connection);
+    //     if (context.result.client) {
+    //       context.app.channel(`clients/${context.result.client._id ? context.result.client._id : context.result.client}`).join(context.params.connection);
+    //     }
+    //     if (context.result.device) {
+    //       context.app.channel(`devices/${context.result.device._id ? context.result.device._id : context.result.device}`).join(context.params.connection);
+    //     }
+    //   }
+    // }
   }
   return context;
 }

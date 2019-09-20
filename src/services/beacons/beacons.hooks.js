@@ -109,10 +109,7 @@ function updateProxemics(context) {
       context.app.service('proxemics')
         .create({ user: context.params.user._id })
         .then(proxemics => { resolve(proxemics) })
-        .catch(e => {
-          if (e instanceof Conflict) { resolve(); } 
-          else { reject(); }
-        });
+        .catch(e => { if (e instanceof Conflict) { resolve(); } else { reject(e); } });
     }).then(() => Promise.all([
       context.app.service('devices').find({ query: { $limit: 1, deviceUuid: deviceUuid } }),
       context.app.service('devices').find({ query: { $limit: 1, beaconValues: detectedBeacon.values } })
@@ -129,6 +126,10 @@ function updateProxemics(context) {
             user: context.params.user._id
           }
         });
+        
+        //-------------------//
+        //---- SNIPPET 1 ----//
+        //-------------------//
         // return Promise.all([
         //   context.app.service('beacons').find({
         //     query: {
@@ -146,6 +147,9 @@ function updateProxemics(context) {
         //   })
         // ])
 
+        //-------------------//
+        //---- SNIPPET 2 ----//
+        //-------------------//
         // return Promise.all([
         //   context.app.service('beacon-logs').find({
         //     query: {

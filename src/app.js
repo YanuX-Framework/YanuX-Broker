@@ -40,7 +40,7 @@ app.configure(socketio(function (io) {
     // Registering Socket.io middleware
     io.use(function (socket, next) {
         // Exposing the socket to services and hooks
-        socket.feathers.socket = socket;
+        socket.feathers._socket = socket;
         next();
     });
 }));
