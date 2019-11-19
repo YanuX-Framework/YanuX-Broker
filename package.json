@@ -32,15 +32,15 @@
     "mocha": "mocha test/ --recursive --exit"
   },
   "dependencies": {
-    "@feathersjs/authentication": "^4.3.7",
-    "@feathersjs/authentication-local": "^4.3.7",
-    "@feathersjs/authentication-oauth": "^4.3.7",
-    "@feathersjs/configuration": "^4.3.7",
-    "@feathersjs/errors": "^4.3.7",
-    "@feathersjs/express": "^4.3.7",
-    "@feathersjs/feathers": "^4.3.7",
-    "@feathersjs/primus": "^4.3.7",
-    "@feathersjs/socketio": "^4.3.7",
+    "@feathersjs/authentication": "^4.3.11",
+    "@feathersjs/authentication-local": "^4.3.11",
+    "@feathersjs/authentication-oauth": "^4.3.11",
+    "@feathersjs/configuration": "^4.3.11",
+    "@feathersjs/errors": "^4.3.11",
+    "@feathersjs/express": "^4.3.11",
+    "@feathersjs/feathers": "^4.3.11",
+    "@feathersjs/primus": "^4.3.11",
+    "@feathersjs/socketio": "^4.3.11",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
     "debug": "^4.1.1",
@@ -51,9 +51,9 @@
     "feathers-mongoose": "^8.1.0",
     "helmet": "^3.21.2",
     "lodash": "^4.17.15",
-    "mongodb": "^3.3.3",
+    "mongodb": "^3.3.4",
     "mongodb-core": "^3.2.7",
-    "mongoose": "^5.7.6",
+    "mongoose": "^5.7.11",
     "passport-custom": "^1.1.0",
     "serve-favicon": "^2.5.0",
     "uuid": "^3.3.3",
@@ -62,10 +62,10 @@
   },
   "devDependencies": {
     "ajv": "^6.10.2",
-    "eslint": "^6.5.1",
+    "eslint": "^6.6.0",
     "mocha": "^6.2.2",
     "nodemon": "^1.19.4",
     "request": "^2.88.0",
-    "request-promise": "^4.2.4"
+    "request-promise": "^4.2.5"
   }
 }
