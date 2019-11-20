@@ -1,7 +1,7 @@
 const Debug = require('debug');
 const debug = Debug('@feathersjs/authentication-local:yanux-auth:verify');
 const { AuthenticationBaseStrategy } = require('@feathersjs/authentication')
-const { NotAuthenticated } = require('@feathersjs/errors');
+const { NotAuthenticated, GeneralError} = require('@feathersjs/errors');
 const request = require('request');
 
 module.exports = class YanuxStrategy extends AuthenticationBaseStrategy {
@@ -15,7 +15,7 @@ module.exports = class YanuxStrategy extends AuthenticationBaseStrategy {
             'clientIdField'
         ].forEach(prop => {
             if (typeof config[prop] !== 'string') {
-                throw new Error(`'${this.name}' authentication strategy requires a '${prop}' setting`);
+                throw new GeneralError(`'${this.name}' authentication strategy requires a '${prop}' setting`);
             }
         });
     }

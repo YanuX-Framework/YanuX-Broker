@@ -39,6 +39,6 @@
   },
   "beacons": {
     "maxInactivityTime": 5000,
-    "avgRssiThreshold": -65
+    "avgRssiThreshold": -60
   }
 }

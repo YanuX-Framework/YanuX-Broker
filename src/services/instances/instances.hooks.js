@@ -1,9 +1,10 @@
-const { authenticate } = require('@feathersjs/authentication').hooks;
 const uuidv4 = require('uuid/v4');
 
+const { authenticate } = require('@feathersjs/authentication').hooks;
 const protect = require('@feathersjs/authentication-local').hooks.protect;
-const canReadEntity = require('../../hooks/authorization').canReadEntity
-const canWriteEntity = require('../../hooks/authorization').canWriteEntity
+
+const canReadEntity = require('../../hooks/authorization').canReadEntity;
+const canWriteEntity = require('../../hooks/authorization').canWriteEntity;
 
 function beforeCreate(context) {
   if (context.data) {

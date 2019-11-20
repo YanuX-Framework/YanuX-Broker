@@ -1,4 +1,4 @@
-const errors = require('@feathersjs/errors');
+const { Forbidden, GeneralError } = require('@feathersjs/errors');
 
 const isInternal = context => {
     return !context.params.provider
@@ -45,7 +45,7 @@ module.exports.canWriteEntity = context => {
         return context;
     } else if (context.method === 'create') {
         if (checker(context.data)) return context;
-        else throw new errors.Forbidden('Write access denied.');
+        else throw new Forbidden('Write access denied.');
     } else {
         return new Promise((resolve, reject) => {
             let promise = Promise.resolve(false);
@@ -63,7 +63,7 @@ module.exports.canWriteEntity = context => {
             }
             promise.then(isOwner => {
                 if (isOwner) resolve(context);
-                else reject(new errors.Forbidden('Write access denied.'));
+                else reject(new Forbidden('Write access denied.'));
             }).catch(e => reject(e));
         });
     }
@@ -71,7 +71,7 @@ module.exports.canWriteEntity = context => {
 
 module.exports.canReadEntity = context => {
     if (context.type !== 'after') {
-        throw new Error(`This hook should only be used as a 'after' hook.`);
+        throw new GeneralError(`This hook should only be used as a 'after' hook.`);
     } else if (isInternal(context)) {
         return context
     } else {
@@ -84,7 +84,7 @@ module.exports.canReadEntity = context => {
         }
         if (Array.isArray(result) && result.every(checker) || !Array.isArray(result) && checker(result)) {
             return context;
-        } else throw new errors.Forbidden('Read access denied.');
+        } else throw new Forbidden('Read access denied.');
     }
 }
 

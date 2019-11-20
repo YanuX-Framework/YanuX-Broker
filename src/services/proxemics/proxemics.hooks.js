@@ -1,7 +1,7 @@
 const { authenticate } = require('@feathersjs/authentication').hooks;
 
-const canReadEntity = require('../../hooks/authorization').canReadEntity
-const canWriteEntity = require('../../hooks/authorization').canWriteEntity
+const canReadEntity = require('../../hooks/authorization').canReadEntity;
+const canWriteEntity = require('../../hooks/authorization').canWriteEntity;
 
 module.exports = {
   before: {

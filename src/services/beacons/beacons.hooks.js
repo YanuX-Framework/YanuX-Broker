@@ -1,9 +1,10 @@
-const { authenticate } = require('@feathersjs/authentication').hooks;
-const { Conflict } = require("@feathersjs/errors");
 const _ = require('lodash');
 
-const canReadEntity = require('../../hooks/authorization').canReadEntity
-const canWriteEntity = require('../../hooks/authorization').canWriteEntity
+const { authenticate } = require('@feathersjs/authentication').hooks;
+const { GeneralError, Conflict } = require('@feathersjs/errors');
+
+const canReadEntity = require('../../hooks/authorization').canReadEntity;
+const canWriteEntity = require('../../hooks/authorization').canWriteEntity;
 
 function logBeacons(context) {
   if (context.result) {
@@ -63,7 +64,7 @@ function beforePatchUpdate(context) {
         } else if (beacons.every(b => beacon.timestamp >= b.beacon.timestamp)) {
           return context;
         } else {
-          throw new Error('The new beacon\'s timestamp is older than the one(s) already stored.');
+          throw new GeneralError('The new beacon\'s timestamp is older than the one(s) already stored.');
         }
       }).catch(e => { throw e; });
   }
@@ -71,7 +72,7 @@ function beforePatchUpdate(context) {
 
 function updateProxemics(context) {
   if (context.type !== 'after') {
-    throw new Error('This must be run as an \'after\' hook.')
+    throw new GeneralError('This must be run as an \'after\' hook.')
   }
   if (context.method !== 'create' && context.method !== 'patch' && context.method !== 'update' && context.method !== 'remove') {
     return context;
@@ -114,7 +115,7 @@ function updateProxemics(context) {
       detectedDevice = (devices[1].data ? devices[1].data : devices[1])[0];
       if (!scanningDevice || !detectedDevice) {
         // If either of the devices is missing from the database it's either an error or there's nothing to do with them.
-        throw new Error('Either the scanning device or the detected device are absent from the database.');
+        throw new GeneralError('Either the scanning device or the detected device are absent from the database.');
       } else if (!scanningDevice._id.equals(detectedDevice._id)) {
         return context.app.service('proxemics').find({
           query: {
@@ -122,7 +123,7 @@ function updateProxemics(context) {
             user: context.params.user._id
           }
         });
-
+        // ---------------------------------------------------------------------
         //-------------------//
         //---- SNIPPET 1 ----//
         //-------------------//
@@ -142,7 +143,9 @@ function updateProxemics(context) {
         //     }
         //   })
         // ])
-
+        // ---------------------------------------------------------------------
+        // ---------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         //-------------------//
         //---- SNIPPET 2 ----//
         //-------------------//
@@ -177,12 +180,18 @@ function updateProxemics(context) {
         //     }
         //   })
         // ]);
+        // ---------------------------------------------------------------------
       }
     }).then(result => {
       if (result) {
         const currProxemics = (result.data ? result.data : result)[0];
+        // ---------------------------------------------------------------------
+        //---------- SNIPPET 3 ----------//
+        //- Dependes on Snippets 1 OR 2 -//
+        //-------------------------------//
         //const beacon = (result[0].data ? result[0].data : result[0])[0];
         //const currProxemics = (result[1].data ? result[1].data : result[1])[0];
+        // ---------------------------------------------------------------------
         if (currProxemics) {
           const proxemics = {
             user: context.params.user._id,
@@ -197,7 +206,7 @@ function updateProxemics(context) {
             return context.app.service('proxemics').update(currProxemics._id, proxemics);
           }
         } else {
-          throw new Error('Current proxemics state is missing.');
+          throw new GeneralError('Current proxemics state is missing.');
         }
       }
     }).then(() => context).catch(e => { throw e; });

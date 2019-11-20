@@ -1,14 +1,15 @@
 const { authenticate } = require('@feathersjs/authentication').hooks;
+const { NotAuthenticated } = require('@feathersjs/errors');
 
-const canReadEntity = require('../../hooks/authorization').canReadEntity
-const canWriteEntity = require('../../hooks/authorization').canWriteEntity
+const canReadEntity = require('../../hooks/authorization').canReadEntity;
+const canWriteEntity = require('../../hooks/authorization').canWriteEntity;
 
 function beforeCreateUpdatePatch(context) {
   if (context.data && !context.data.user) {
     if (context.params.user) {
       context.data.user = context.params.user._id;
     } else {
-      throw new Error('No user associated with the current connection.');
+      throw new NotAuthenticated('No user associated with the current connection.');
     }
   }
   return context;
