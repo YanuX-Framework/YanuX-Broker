@@ -13,15 +13,10 @@ module.exports = class YanuxAuthenticationService extends AuthenticationService 
             const value = await authStrategy.parse(req, res);
             if (value !== null) {
                 if (value.strategy === 'jwt') {
-                    try {
-                        const isJwtValid = await this.verifyAccessToken(value.accessToken);
-                        if (isJwtValid) {
-                            return value;
-                        }
-                    } catch (e) { continue; }
-                } else {
-                    return value;
+                    try { if (await this.verifyAccessToken(value.accessToken)) { return value; } }
+                    catch (e) { }
                 }
+                return value;
             }
         }
         return null;

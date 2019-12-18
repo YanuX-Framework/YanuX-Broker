@@ -88,7 +88,7 @@ module.exports = class YanuxStrategy extends AuthenticationBaseStrategy {
             request.get(this.configuration.url, { 'auth': { 'bearer': accessToken } }, (err, httpResponse, body) => {
                 if (err) {
                     reject(new NotAuthenticated(err));
-                } else if (httpResponse.statusCode != 200) {
+                } else if (httpResponse.statusCode !== 200) {
                     reject(new NotAuthenticated('The provided access token is not valid.'));
                 } else {
                     const verification = JSON.parse(body);

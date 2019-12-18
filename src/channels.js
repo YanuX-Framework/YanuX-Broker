@@ -46,19 +46,25 @@ module.exports = function (app) {
     } else if (app.channels.length > 0) {
       channel = app.channel(app.channels);
     }
-    if (channel) {
-      if (context.params && context.params.connection && context.params.connection.user) {
-        channel = channel.filter(connection => connection.user ? connection.user._id.equals(context.params.connection.user._id) : false);
-      } else if (data && data.user) {
-        channel = channel.filter(connection => connection.user ? connection.user._id.equals(data.user._id) : false);
-      } else if (context.data && context.data.user) {
-        channel = channel.filter(connection => connection.user ? connection.user._id.equals(context.data.user._id) : false);
-      } else if (context.result && context.result.user) {
-        channel = channel.filter(connection => connection.user ? connection.user._id.equals(context.result.user._id) : false);
-      } else if (context.params && context.params.query && context.params.query.user) {
-        channel = channel.filter(connection => connection.user ? connection.user._id.equals(context.params.query.user._id) : false);
-      }
-    }
+    // -----------------------------------------------------------------------------------------------------------------------------------------------
+    // TODO:                                                                                                                                         |
+    // -----------------------------------------------------------------------------------------------------------------------------------------------
+    // Remove the following block of code. I don't think that it is necessary with for the current "channels" implementation.                        |
+    // I'm just keeping it commented out for a little a longer just in case I broke something due to its absence.                                    |
+    // -----------------------------------------------------------------------------------------------------------------------------------------------
+    // if (channel) {
+    //   if (context.params && context.params.connection && context.params.connection.user) {
+    //     channel = channel.filter(connection => connection.user ? connection.user._id.equals(context.params.connection.user._id) : false);
+    //   } else if (data && data.user) {
+    //     channel = channel.filter(connection => connection.user ? connection.user._id.equals(data.user._id) : false);
+    //   } else if (context.data && context.data.user) {
+    //     channel = channel.filter(connection => connection.user ? connection.user._id.equals(context.data.user._id) : false);
+    //   } else if (context.result && context.result.user) {
+    //     channel = channel.filter(connection => connection.user ? connection.user._id.equals(context.result.user._id) : false);
+    //   } else if (context.params && context.params.query && context.params.query.user) {
+    //     channel = channel.filter(connection => connection.user ? connection.user._id.equals(context.params.query.user._id) : false);
+    //   }
+    // }
     return channel;
   };
 
