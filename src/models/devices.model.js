@@ -8,6 +8,7 @@ module.exports = function (app) {
   const devices = new Schema({
     user: { type: Schema.Types.ObjectId, ref: 'users', required: true },
     deviceUuid: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
     beaconValues: { type: Array },
     /**
      * TODO:
