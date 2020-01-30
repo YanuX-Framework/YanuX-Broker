@@ -26,31 +26,12 @@ function afterCreate(context) {
       }).then(instances => context.app.debug('Removed Instances:', instances))
         .catch(e => context.app.error('Failed to Remove Instances:', e));
     }
-
     if (context.params.provider === 'socketio') {
       context.params._socket.on('disconnect', onDisconnect);
     }
-    /**
-     * TODO: Test if this works with a Primus-based client!
-     */
     if (context.params.provider === 'primus') {
       context.params._socket.on('end', onDisconnect);
     }
-
-    // if (context.params.connection) {
-    //   if (context.params && context.params.user) {
-    //     context.app.channel(`users/${context.params.user._id ? context.params.user._id : context.params.user}`).join(context.params.connection);
-    //   }
-    //   if (context.result) {
-    //     context.app.channel(`instances/${context.result._id ? context.result._id : context.result}`).join(context.params.connection);
-    //     if (context.result.client) {
-    //       context.app.channel(`clients/${context.result.client._id ? context.result.client._id : context.result.client}`).join(context.params.connection);
-    //     }
-    //     if (context.result.device) {
-    //       context.app.channel(`devices/${context.result.device._id ? context.result.device._id : context.result.device}`).join(context.params.connection);
-    //     }
-    //   }
-    // }
   }
   return context;
 }
@@ -66,10 +47,7 @@ module.exports = {
     remove: [canWriteEntity]
   },
   after: {
-    all: [
-      // Make sure the user's password field is never sent to the client
-      // Always must be the last hook
-      protect('user.password')],
+    all: [protect('user.password')],
     find: [canReadEntity],
     get: [canReadEntity],
     create: [afterCreate],
