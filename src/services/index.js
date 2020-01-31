@@ -6,8 +6,8 @@ const clients = require('./clients/clients.service.js');
 const instances = require('./instances/instances.service.js');
 const devices = require('./devices/devices.service.js');
 const proxemics = require('./proxemics/proxemics.service.js');
-const test = require('./test/test.service.js');
 const beaconLogs = require('./beacon-logs/beacon-logs.service.js');
+
 // eslint-disable-next-line no-unused-vars
 module.exports = function (app) {
   // Generic Services
@@ -24,10 +24,11 @@ module.exports = function (app) {
   // - Beacons service
   // - Instances service
   // - Devices service
+  // - Proxemics service
+  // - Beacon Logs service
   app.configure(beacons);
   app.configure(instances);
   app.configure(devices);
   app.configure(proxemics);
-  app.configure(test);
   app.configure(beaconLogs);
 };

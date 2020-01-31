@@ -16,9 +16,9 @@ module.exports = function (app) {
     client: { type: Schema.Types.ObjectId, ref: 'clients', required: true },
     device: { type: Schema.Types.ObjectId, ref: 'devices', required: true },
     instanceUuid: { type: String, required: true, unique: true },
+    brokerName: { type: String, required: true, default: app.get('name') },
     name: { type: String, required: false },
     active: { type: Boolean, required: true, default: true },
-    brokerName: { type: String, required: true, default: app.get('name') },
     componentsDistribution
   }, { timestamps: true, minimize: false });
 
