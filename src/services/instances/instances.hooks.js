@@ -1,4 +1,4 @@
-const uuidv4 = require('uuid/v4');
+const { v4: uuidv4 } = require('uuid');
 
 const { authenticate } = require('@feathersjs/authentication').hooks;
 const protect = require('@feathersjs/authentication-local').hooks.protect;
