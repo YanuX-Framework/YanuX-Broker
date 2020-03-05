@@ -1,13 +1,8 @@
 {
   "name": "YanuX-Broker",
-  "zeroconf": false,
   "host": "localhost",
   "port": 3002,
-  "public": "../public/",
-  "paginate": {
-    "default": 10,
-    "max": 50
-  },
+  "zeroconf": false,
   "mongodb": "mongodb://localhost:27017/yanux-broker",
   "authentication": {
     "entity": "user",
@@ -41,5 +36,10 @@
   "beacons": {
     "maxInactivityTime": 5000,
     "avgRssiThreshold": -60
+  },
+  "public": "../public/",
+  "paginate": {
+    "default": 10,
+    "max": 50
   }
 }

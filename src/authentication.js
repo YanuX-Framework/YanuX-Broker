@@ -1,6 +1,3 @@
-const path = require('path');
-const fs = require('fs');
-
 const { JWTStrategy } = require('@feathersjs/authentication');
 const { YanuxAuthenticationService, YanuxStrategy } = require('./auth/yanux');
 
@@ -8,10 +5,7 @@ const { LocalStrategy } = require('@feathersjs/authentication-local');
 const { expressOauth } = require('@feathersjs/authentication-oauth');
 
 module.exports = app => {
-  const config = app.get('authentication');
-  const privateKey = fs.readFileSync(path.join(__dirname,'..','keys','combined.pem'), 'utf8');
-  config.secret = privateKey;
-  app.set('authentication', config);
+  app.set('authentication', app.get('authentication'));
   
   const authentication = new YanuxAuthenticationService(app);
 
