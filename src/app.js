@@ -24,6 +24,10 @@ const app = express(feathers());
 
 // Load app configuration
 app.configure(configuration());
+
+//Config MongoDB
+app.set('mongodb', process.env.MOBGODB_URI || app.get('mongodb'))
+
 // Enable security, CORS, compression, favicon and body parsing
 app.use(helmet());
 app.use(cors());
@@ -65,7 +69,9 @@ app.configure(services);
 // Set up event channels (see channels.js)
 app.configure(channels);
 // Set up DNS-SD based zeroconf
-app.configure(zeroconf);
+if (app.get('zeroconf')) {
+    app.configure(zeroconf);
+}
 
 // Configure a middleware for 404s and the error handler
 app.use(express.notFound());
