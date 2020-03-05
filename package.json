@@ -25,8 +25,9 @@
     "npm": ">= 3.0.0"
   },
   "scripts": {
+    "start": "npm run serve",
     "serve": "node src/",
-    "start": "npx nodemon src/",
+    "watch": "npx nodemon src/",
     "test": "npm run eslint && npm run mocha",
     "eslint": "eslint src/. test/. --config .eslintrc.json",
     "mocha": "mocha test/ --recursive --exit"
