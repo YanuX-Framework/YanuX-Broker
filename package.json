@@ -17,7 +17,7 @@
   "contributors": [],
   "bugs": {},
   "directories": {
-    "lib": "src",
+    "lib": "src", 
     "test": "test/"
   },
   "engines": {
