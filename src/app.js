@@ -63,9 +63,6 @@ configBeacons.maxInactivityTime = parseInt(process.env.BEACONS_MAX_INACTIVITY_TI
 configBeacons.avgRssiThreshold = parseInt(process.env.BEACONS_AVG_RSSI_THRESHOLD) || configBeacons.avgRssiThreshold;
 app.set('beacons', configBeacons);
 
-// Config Public
-app.set('public', process.env.PUBLIC || app.get('public'));
-
 // Config Paginate
 const configPaginate = app.get('paginate') || {};
 configPaginate.default = parseInt(process.env.PAGINATE_DEFAULT) || configPaginate.default;
