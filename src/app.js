@@ -41,8 +41,9 @@ app.set('zeroconf', process.env.ZEROCONF === 'true' || app.get('portzeroconf'));
 // Config MongoDB
 app.set('mongodb', process.env.MONGODB_URI || app.get('mongodb'));
 
-//Config Authentication
+// Config Authentication
 const configAuthentication = app.get('authentication') || {};
+
 //// Config Authentication JWT Options
 configAuthentication.jwtOptions = configAuthentication.jwtOptions || {}
 configAuthentication.jwtOptions.audience = process.env.AUTHENTICATION_JWT_OPTIONS_AUDIENCE || configAuthentication.jwtOptions.audience;
@@ -57,7 +58,7 @@ configAuthentication.yanux.url = process.env.AUTHENTICATION_YANUX_URL || configA
 
 app.set('authentication', configAuthentication);
 
-//Config Beacons
+// Config Beacons
 const configBeacons = app.get('beacons') || {};
 configBeacons.maxInactivityTime = parseInt(process.env.BEACONS_MAX_INACTIVITY_TIME) || configBeacons.maxInactivityTime;
 configBeacons.avgRssiThreshold = parseInt(process.env.BEACONS_AVG_RSSI_THRESHOLD) || configBeacons.avgRssiThreshold;
