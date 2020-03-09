@@ -54,7 +54,7 @@
     "lodash": "^4.17.15",
     "mongodb": "^3.5.4",
     "mongodb-core": "^3.2.7",
-    "mongoose": "^5.9.3",
+    "mongoose": "^5.9.4",
     "nodemon": "^2.0.2",
     "passport-custom": "^1.1.1",
     "request": "^2.88.2",
@@ -62,7 +62,7 @@
     "serve-favicon": "^2.5.0",
     "uuid": "^7.0.2",
     "winston": "^3.2.1",
-    "ws": "^7.2.2"
+    "ws": "^7.2.3"
   },
   "devDependencies": {
     "ajv": "^6.12.0",

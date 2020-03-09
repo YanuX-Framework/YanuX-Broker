@@ -4,6 +4,11 @@
   "port": 3002,
   "zeroconf": false,
   "mongodb": "mongodb://localhost:27017/yanux-broker",
+  "keys": {
+    "private_key_path": "keys/private_key.pem",
+    "public_key_path": "keys/public_key.pem",
+    "combined_key_path": "keys/combined_key.pem"
+  },
   "authentication": {
     "entity": "user",
     "service": "users",
