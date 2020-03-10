@@ -15,8 +15,7 @@ module.exports = class YanuxAuthenticationService extends AuthenticationService 
                 if (value.strategy === 'jwt') {
                     try { if (await this.verifyAccessToken(value.accessToken)) { return value; } }
                     catch (e) { }
-                }
-                return value;
+                } else { return value; }
             }
         }
         return null;
