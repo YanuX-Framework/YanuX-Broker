@@ -7,6 +7,7 @@ module.exports = function (app) {
   const { Schema } = mongooseClient;
 
   const resources = new Schema({
+    name: { type: String },
     brokerName: { type: String, required: true, default: app.get('name') },
     user: { type: Schema.Types.ObjectId, ref: 'users', required: true },
     client: { type: Schema.Types.ObjectId, ref: 'clients', required: true },
