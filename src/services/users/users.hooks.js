@@ -10,7 +10,7 @@ module.exports = {
     all: [],
     find: [authenticate('jwt', 'yanux')],
     get: [authenticate('jwt', 'yanux')],
-    create: [disallow('external'), canWriteEntity, hashPassword('password')],
+    create: [disallow('external'), /*canWriteEntity,*/ hashPassword('password')],
     update: [disallow('external'), canWriteEntity, hashPassword('password'), authenticate('jwt', 'yanux')],
     patch: [disallow('external'), canWriteEntity, hashPassword('password'), authenticate('jwt', 'yanux')],
     remove: [disallow('external'), canWriteEntity, authenticate('jwt', 'yanux')]
@@ -22,8 +22,8 @@ module.exports = {
       // Always must be the last hook
       protect('password')
     ],
-    find: [canReadEntity],
-    get: [canReadEntity],
+    find: [/*canReadEntity*/],
+    get: [/*canReadEntity*/],
     create: [],
     update: [],
     patch: [],
