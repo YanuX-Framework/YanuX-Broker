@@ -28,7 +28,7 @@ module.exports = function (app) {
       } else if (authResult.authentication && authResult.authentication.payload && authResult.authentication.payload.client) {
         clientId = authResult.authentication.payload.client._id
       }
-      
+
       if (clientId) {
         app.channel(`clients/${clientId}`).join(connection);
         app.channel(`users/${user._id}/clients/${clientId}`).join(connection);
@@ -46,7 +46,13 @@ module.exports = function (app) {
     if (context.path === 'clients') {
       channel = app.channel(`clients/${data._id}`);
     } else if (data && data.client && data.user) {
-      channel = app.channel(`users/${data.user._id}/clients/${data.client._id}`);
+      const ownerChannel = `users/${data.user._id}/clients/${data.client._id}`;
+      channel = app.channel(ownerChannel);
+      if (data && data.sharedWith) {
+        channel = app.channel(ownerChannel, ...data.sharedWith.map(u => `users/${u}/clients/${data.client._id}`));
+      } else {
+        channel = app.channel(ownerChannel);
+      }
     } else if (data && data.client) {
       channel = app.channel(`clients/${data.client._id}`);
     } else if (data && data.user) {

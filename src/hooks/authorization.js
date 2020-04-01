@@ -25,7 +25,12 @@ const checkOwnership = context => entity => {
         context.params &&
         context.params.user &&
         context.params.user._id &&
-        entity.user.toString() === context.params.user._id.toString()) {
+        (
+            entity.user.toString() === context.params.user._id.toString() ||
+            (entity.user._id && entity.user._id.toString() === context.params.user._id.toString()) ||
+            (entity.sharedWith && entity.sharedWith.some(u => u.toString() === context.params.user._id.toString()))
+        )
+    ) {
         if (entity.client && context.params.client && context.params.client._id) {
             return entity.client.toString() === context.params.client._id.toString();
         } else return true;
