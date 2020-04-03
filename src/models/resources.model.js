@@ -15,7 +15,13 @@ module.exports = function (app) {
     sharedWith: { type: [Schema.Types.ObjectId], ref: 'users', default: [], required: true },
     data: { type: Object, required: true, default: {} }
   }, { timestamps: true, minimize: false });
+  
   resources.index({ user: 1, client: 1, default: 1 }, { unique: true, partialFilterExpression: { default: true } });
+
+  resources.pre('validate', function(next) {
+    this.brokerName = app.get('name');
+    next();
+  });
 
   return mongooseClient.model('resources', resources);
 };

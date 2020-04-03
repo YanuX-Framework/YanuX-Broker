@@ -18,5 +18,11 @@ module.exports = function (app) {
     capabilities: { type: Schema.Types.Mixed },
     brokerName: { type: String, required: true, default: app.get('name') }
   }, { timestamps: true, minimize: false });
+
+  devices.pre('validate', function (next) {
+    this.brokerName = app.get('name');
+    next();
+  });
+
   return mongooseClient.model('devices', devices);
 };

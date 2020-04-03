@@ -9,5 +9,11 @@ module.exports = function (app) {
     password: { type: String },
     brokerName: { type: String, required: true, default: app.get('name') }
   }, { timestamps: true, minimize: false });
+
+  users.pre('validate', function(next) {
+    this.brokerName = app.get('name');
+    next();
+  });
+
   return mongooseClient.model('users', users);
 };

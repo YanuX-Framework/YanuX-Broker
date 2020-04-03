@@ -22,6 +22,11 @@ module.exports = function (app) {
     componentsDistribution
   }, { timestamps: true, minimize: false });
 
+  instances.pre('validate', function (next) {
+    this.brokerName = app.get('name');
+    next();
+  });
+
   instances.index({ user: 1, client: 1, device: 1, instanceUuid: 1 }, { unique: true });
   return mongooseClient.model('instances', instances);
 };

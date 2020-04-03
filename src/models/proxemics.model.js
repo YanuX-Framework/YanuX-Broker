@@ -5,12 +5,17 @@
 module.exports = function (app) {
   const mongooseClient = app.get('mongooseClient');
   const { Schema } = mongooseClient;
-  
+
   const proxemics = new Schema({
     user: { type: Schema.Types.ObjectId, ref: 'users', required: true, unique: true },
     state: { type: Schema.Types.Mixed, required: true, default: {} },
     brokerName: { type: String, required: true, default: app.get('name') }
   }, { timestamps: true, minimize: false });
+
+  proxemics.pre('validate', function (next) {
+    this.brokerName = app.get('name');
+    next();
+  });
 
   return mongooseClient.model('proxemics', proxemics);
 };

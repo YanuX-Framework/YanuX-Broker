@@ -15,5 +15,10 @@ module.exports = function (app) {
     brokerName: { type: String, required: true, default: app.get('name') }
   }, { timestamps: true });
 
+  beaconLogs.pre('validate', function (next) {
+    this.brokerName = app.get('name');
+    next();
+  });
+
   return mongooseClient.model('beaconLogs', beaconLogs);
 };

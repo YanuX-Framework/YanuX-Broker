@@ -13,7 +13,13 @@ module.exports = function (app) {
     beacon: { type: Object, required: true },
     brokerName: { type: String, required: true, default: app.get('name') }
   }, { timestamps: true, minimize: false });
+  
   beacons.index({ beaconKey: 1, deviceUuid: 1 }, { unique: true });
+
+  beacons.pre('validate', function (next) {
+    this.brokerName = app.get('name');
+    next();
+  });
 
   return mongooseClient.model('beacons', beacons);
 };
