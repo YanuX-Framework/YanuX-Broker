@@ -55,7 +55,7 @@
     "mongodb": "^3.5.5",
     "mongodb-core": "^3.2.7",
     "mongoose": "^5.9.7",
-    "nodemon": "^2.0.2",
+    "nodemon": "^2.0.3",
     "passport-custom": "^1.1.1",
     "request": "^2.88.2",
     "request-promise": "^4.2.5",
