@@ -26,7 +26,7 @@ const app = express(feathers());
 // Load app configuration
 app.configure(configuration());
 // Custom configuration step that loads some extra information from the configuration files and environment variables
-app.configure(configure)
+app.configure(configure);
 
 // Enable security, CORS, compression, favicon and body parsing
 app.use(helmet());
