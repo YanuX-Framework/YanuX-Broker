@@ -9,7 +9,6 @@ const feathers = require('@feathersjs/feathers');
 const configuration = require('@feathersjs/configuration');
 const express = require('@feathersjs/express');
 const socketio = require('@feathersjs/socketio');
-const primus = require('@feathersjs/primus');
 
 const configure = require('./configure');
 const middleware = require('./middleware');
@@ -19,7 +18,11 @@ const channels = require('./channels');
 const mongodb = require('./mongodb');
 const mongoose = require('./mongoose');
 const authentication = require('./authentication');
-const zeroconf = require('./zeroconf');
+
+// --------------------- Disabled modules ---------------------
+// const primus = require('@feathersjs/primus');
+// const zeroconf = require('./zeroconf');
+// ------------------------------------------------------------
 
 const app = express(feathers());
 
@@ -55,16 +58,20 @@ app.configure(socketio(function (io) {
     });
 }));
 
-// Primus
-app.configure(primus({
-    transformer: 'websockets'
-}, function (primus) {
-    // Do something with primus
-    primus.use('feathers-socket', function (req, res) {
-        // Exposing the requesting socket
-        req.feathers.socket = req;
-    });
-}));
+// -------------------------------------------------------------
+// Disabled Primus (package: @feathersjs/primus)
+// -------------------------------------------------------------
+// // Primus
+// app.configure(primus({
+//     transformer: 'websockets'
+// }, function (primus) {
+//     // Do something with primus
+//     primus.use('feathers-socket', function (req, res) {
+//         // Exposing the requesting socket
+//         req.feathers.socket = req;
+//     });
+// }));
+// -------------------------------------------------------------
 
 // MongoDB
 app.configure(mongodb);
@@ -74,15 +81,24 @@ app.configure(mongoose);
 
 // Configure other middleware (see `middleware/index.js`)
 app.configure(middleware);
+
+// Set up authentication
 app.configure(authentication);
+
 // Set up our services (see `services/index.js`)
 app.configure(services);
+
 // Set up event channels (see channels.js)
 app.configure(channels);
-// Set up DNS-SD based zeroconf
-if (app.get('zeroconf')) {
-    app.configure(zeroconf);
-}
+
+// -------------------------------------------------------------
+// Disabled zeroconf (package: dnssd)
+// -------------------------------------------------------------
+// // Set up DNS-SD based zeroconf
+// if (app.get('zeroconf')) {
+//     app.configure(zeroconf);
+// }
+// -------------------------------------------------------------
 
 // Configure a middleware for 404s and the error handler
 app.use(express.notFound());
