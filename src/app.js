@@ -18,10 +18,10 @@ const channels = require('./channels');
 const mongodb = require('./mongodb');
 const mongoose = require('./mongoose');
 const authentication = require('./authentication');
+const zeroconf = require('./zeroconf');
 
 // --------------------- Disabled modules ---------------------
 // const primus = require('@feathersjs/primus');
-// const zeroconf = require('./zeroconf');
 // ------------------------------------------------------------
 
 const app = express(feathers());
@@ -91,14 +91,10 @@ app.configure(services);
 // Set up event channels (see channels.js)
 app.configure(channels);
 
-// -------------------------------------------------------------
-// Disabled zeroconf (package: dnssd)
-// -------------------------------------------------------------
-// // Set up DNS-SD based zeroconf
-// if (app.get('zeroconf')) {
-//     app.configure(zeroconf);
-// }
-// -------------------------------------------------------------
+// Set up DNS-SD based zeroconf
+if (app.get('zeroconf')) {
+    app.configure(zeroconf);
+}
 
 // Configure a middleware for 404s and the error handler
 app.use(express.notFound());
