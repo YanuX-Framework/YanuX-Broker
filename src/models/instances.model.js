@@ -15,6 +15,8 @@ module.exports = function (app) {
     user: { type: Schema.Types.ObjectId, ref: 'users', required: true },
     client: { type: Schema.Types.ObjectId, ref: 'clients', required: true },
     device: { type: Schema.Types.ObjectId, ref: 'devices', required: true },
+    //TODO: Implement "Dynamic" Instance Sharing
+    sharedWith: { type: [Schema.Types.ObjectId], ref: 'users', default: [], required: true },
     instanceUuid: { type: String, required: true, unique: true },
     brokerName: { type: String, required: true, default: app.get('name') },
     name: { type: String, required: false },
