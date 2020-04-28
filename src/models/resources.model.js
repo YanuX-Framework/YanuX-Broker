@@ -8,17 +8,25 @@ module.exports = function (app) {
 
   const resources = new Schema({
     name: { type: String },
-    brokerName: { type: String, required: true, default: app.get('name') },
     user: { type: Schema.Types.ObjectId, ref: 'users', required: true },
     client: { type: Schema.Types.ObjectId, ref: 'clients', required: true },
     default: { type: Boolean, default: true, required: true },
-    sharedWith: { type: [Schema.Types.ObjectId], ref: 'users', default: [], required: true },
-    data: { type: Object, required: true, default: {} }
+    sharedWith: [{ type: Schema.Types.ObjectId, ref: 'users' }],
+    data: { type: Object, required: true, default: {} },
+    brokerName: { type: String, required: true, default: app.get('name') }
   }, { timestamps: true, minimize: false });
-  
+
   resources.index({ user: 1, client: 1, default: 1 }, { unique: true, partialFilterExpression: { default: true } });
 
-  resources.pre('validate', function(next) {
+  resources.pre('deleteOne', function (next, next2) {
+    this.model.findOne(this.getQuery()).then(res => {
+      if (res.default) {
+        next(new Error('A default resource cannot be removed'));
+      } else { next(); }
+    });
+  });
+
+  resources.pre('validate', function (next) {
     this.brokerName = app.get('name');
     next();
   });

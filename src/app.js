@@ -19,6 +19,7 @@ const mongodb = require('./mongodb');
 const mongoose = require('./mongoose');
 const authentication = require('./authentication');
 const zeroconf = require('./zeroconf');
+const logger = require('./logger');
 
 // --------------------- Disabled modules ---------------------
 // const primus = require('@feathersjs/primus');
@@ -98,10 +99,6 @@ if (app.get('zeroconf')) {
 
 // Configure a middleware for 404s and the error handler
 app.use(express.notFound());
-
-const logger = winston.createLogger({
-    transports: [new winston.transports.Console()]
-});
 app.use(express.errorHandler({ logger }));
 app.hooks(appHooks);
 

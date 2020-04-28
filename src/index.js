@@ -1,12 +1,5 @@
 /* eslint-disable no-console */
-const winston = require('winston');
-const logger = winston.createLogger({
-  format: winston.format.combine(
-    winston.format.splat(),
-    winston.format.simple()
-  ), transports: [new winston.transports.Console()]
-});
-
+const logger = require('./logger');
 const app = require('./app');
 const port = app.get('port');
 const server = app.listen(port);

@@ -16,12 +16,12 @@ module.exports = function (app) {
     client: { type: Schema.Types.ObjectId, ref: 'clients', required: true },
     device: { type: Schema.Types.ObjectId, ref: 'devices', required: true },
     //TODO: Implement "Dynamic" Instance Sharing
-    sharedWith: { type: [Schema.Types.ObjectId], ref: 'users', default: [], required: true },
+    sharedWith: [{ type: Schema.Types.ObjectId, ref: 'users' }],
     instanceUuid: { type: String, required: true, unique: true },
-    brokerName: { type: String, required: true, default: app.get('name') },
     name: { type: String, required: false },
     active: { type: Boolean, required: true, default: true },
-    componentsDistribution
+    componentsDistribution,
+    brokerName: { type: String, required: true, default: app.get('name') }
   }, { timestamps: true, minimize: false });
 
   instances.pre('validate', function (next) {
