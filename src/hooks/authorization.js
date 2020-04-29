@@ -28,10 +28,7 @@ const checkOwnership = context => entity => {
         (
             entity.user.toString() === context.params.user._id.toString() ||
             (entity.user._id && entity.user._id.toString() === context.params.user._id.toString()) ||
-            (context.method !== 'remove' && entity.sharedWith && entity.sharedWith.some(u =>
-                (u._id && u._id.toString() === context.params.user._id.toString()) ||
-                u.toString() === context.params.user._id.toString()
-            ))
+            (entity.sharedWith && entity.sharedWith.some(u => u.toString() === context.params.user._id.toString()))
         )
     ) {
         if (entity.client && context.params.client && context.params.client._id) {

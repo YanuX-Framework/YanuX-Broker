@@ -3,9 +3,12 @@
 // See http://mongoosejs.com/docs/models.html
 // for more of what you can do here.
 module.exports = function (app) {
+  const modelName = 'devices';
   const mongooseClient = app.get('mongooseClient');
+
   const { Schema } = mongooseClient;
-  const devices = new Schema({
+  
+  const schema = new Schema({
     user: { type: Schema.Types.ObjectId, ref: 'users', required: true },
     deviceUuid: { type: String, required: true, unique: true },
     name: { type: String, required: true },
@@ -19,10 +22,15 @@ module.exports = function (app) {
     brokerName: { type: String, required: true, default: app.get('name') }
   }, { timestamps: true, minimize: false });
 
-  devices.pre('validate', function (next) {
+  schema.pre('validate', function (next) {
     this.brokerName = app.get('name');
     next();
   });
 
-  return mongooseClient.model('devices', devices);
+  // This is necessary to avoid model compilation errors in watch mode
+  // see https://mongoosejs.com/docs/api/connection.html#connection_Connection-deleteModel
+  if (mongooseClient.modelNames().includes(modelName)) {
+    mongooseClient.deleteModel(modelName);
+  }
+  return mongooseClient.model(modelName, schema);
 };

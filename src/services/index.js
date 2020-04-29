@@ -1,8 +1,9 @@
-const resources = require('./resources/resources.service.js');
 const users = require('./users/users.service.js');
-const beacons = require('./beacons/beacons.service.js');
-const events = require('./events/events.service.js');
 const clients = require('./clients/clients.service.js');
+const events = require('./events/events.service.js');
+const resources = require('./resources/resources.service.js');
+const resourceSubscriptions = require('./resource-subscriptions/resource-subscriptions.service.js');
+const beacons = require('./beacons/beacons.service.js');
 const instances = require('./instances/instances.service.js');
 const devices = require('./devices/devices.service.js');
 const proxemics = require('./proxemics/proxemics.service.js');
@@ -20,6 +21,7 @@ module.exports = function (app) {
   // Broker Services
   // - Resources service
   app.configure(resources);
+  app.configure(resourceSubscriptions);
   // IPS Services
   // - Beacons service
   // - Instances service

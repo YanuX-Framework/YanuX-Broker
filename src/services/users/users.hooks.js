@@ -2,15 +2,14 @@ const { authenticate } = require('@feathersjs/authentication').hooks;
 const { hashPassword, protect } = require('@feathersjs/authentication-local').hooks;
 const { disallow } = require('feathers-hooks-common');
 
-const canReadEntity = require('../../hooks/authorization').canReadEntity
-const canWriteEntity = require('../../hooks/authorization').canWriteEntity
+const canWriteEntity = require('../../hooks/authorization').canWriteEntity;
 
 module.exports = {
   before: {
     all: [],
     find: [authenticate('jwt', 'yanux')],
     get: [authenticate('jwt', 'yanux')],
-    create: [disallow('external'), /*canWriteEntity,*/ hashPassword('password')],
+    create: [disallow('external'), hashPassword('password')],
     update: [disallow('external'), canWriteEntity, hashPassword('password'), authenticate('jwt', 'yanux')],
     patch: [disallow('external'), canWriteEntity, hashPassword('password'), authenticate('jwt', 'yanux')],
     remove: [disallow('external'), canWriteEntity, authenticate('jwt', 'yanux')]
@@ -22,8 +21,8 @@ module.exports = {
       // Always must be the last hook
       protect('password')
     ],
-    find: [/*canReadEntity*/],
-    get: [/*canReadEntity*/],
+    find: [],
+    get: [],
     create: [],
     update: [],
     patch: [],

@@ -3,33 +3,51 @@
 // See http://mongoosejs.com/docs/models.html
 // for more of what you can do here.
 module.exports = function (app) {
+  const modelName = 'resources';
   const mongooseClient = app.get('mongooseClient');
+
   const { Schema } = mongooseClient;
 
-  const resources = new Schema({
+  const schema = new Schema({
     name: { type: String },
     user: { type: Schema.Types.ObjectId, ref: 'users', required: true },
     client: { type: Schema.Types.ObjectId, ref: 'clients', required: true },
     default: { type: Boolean, default: true, required: true },
-    sharedWith: [{ type: Schema.Types.ObjectId, ref: 'users' }],
+    sharedWith: [{
+      type: Schema.Types.ObjectId, ref: 'users', validate: {
+        validator: function (v) {
+          return new Promise(
+            resolve => this.model
+              .findOne(this.getFilter())
+              .then(res => resolve(!res.user.equals(v)))
+          );
+        }, message: 'A resource cannot be shared with its owner.'
+      }
+    }],
     data: { type: Object, required: true, default: {} },
     brokerName: { type: String, required: true, default: app.get('name') }
   }, { timestamps: true, minimize: false });
 
-  resources.index({ user: 1, client: 1, default: 1 }, { unique: true, partialFilterExpression: { default: true } });
+  schema.index({ user: 1, client: 1, default: 1 }, { unique: true, partialFilterExpression: { default: true } });
 
-  resources.pre('deleteOne', function (next, next2) {
-    this.model.findOne(this.getQuery()).then(res => {
-      if (res.default) {
-        next(new Error('A default resource cannot be removed'));
-      } else { next(); }
-    });
-  });
-
-  resources.pre('validate', function (next) {
+  schema.pre('validate', function (next) {
     this.brokerName = app.get('name');
     next();
   });
 
-  return mongooseClient.model('resources', resources);
+  schema.pre('deleteOne', function (next) {
+    this.model.findOne(this.getFilter()).then(res => {
+      if (res.default) {
+        next(new Error('A default resource cannot be removed.'));
+      } else { next(); }
+    });
+  });
+
+
+  // This is necessary to avoid model compilation errors in watch mode
+  // see https://mongoosejs.com/docs/api/connection.html#connection_Connection-deleteModel
+  if (mongooseClient.modelNames().includes(modelName)) {
+    mongooseClient.deleteModel(modelName);
+  }
+  return mongooseClient.model(modelName, schema);
 };

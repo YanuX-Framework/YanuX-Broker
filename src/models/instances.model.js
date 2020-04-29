@@ -3,7 +3,9 @@
 // See http://mongoosejs.com/docs/models.html
 // for more of what you can do here.
 module.exports = function (app) {
+  const modelName = 'instances';
   const mongooseClient = app.get('mongooseClient');
+
   const { Schema } = mongooseClient;
 
   const componentsDistribution = new Schema({
@@ -11,7 +13,7 @@ module.exports = function (app) {
     components: { type: Object, required: true, default: {} }
   }, { _id: false });
 
-  const instances = new Schema({
+  const schema = new Schema({
     user: { type: Schema.Types.ObjectId, ref: 'users', required: true },
     client: { type: Schema.Types.ObjectId, ref: 'clients', required: true },
     device: { type: Schema.Types.ObjectId, ref: 'devices', required: true },
@@ -24,11 +26,18 @@ module.exports = function (app) {
     brokerName: { type: String, required: true, default: app.get('name') }
   }, { timestamps: true, minimize: false });
 
-  instances.pre('validate', function (next) {
+  schema.pre('validate', function (next) {
     this.brokerName = app.get('name');
     next();
   });
 
-  instances.index({ user: 1, client: 1, device: 1, instanceUuid: 1 }, { unique: true });
-  return mongooseClient.model('instances', instances);
+  //TODO: Should the "device" also be part of this unique key? Perhaps, at the very least, a device can be used by different users at different times.
+  schema.index({ user: 1, client: 1, device: 1, instanceUuid: 1 }, { unique: true });
+
+  // This is necessary to avoid model compilation errors in watch mode
+  // see https://mongoosejs.com/docs/api/connection.html#connection_Connection-deleteModel
+  if (mongooseClient.modelNames().includes(modelName)) {
+    mongooseClient.deleteModel(modelName);
+  }
+  return mongooseClient.model(modelName, schema);
 };
