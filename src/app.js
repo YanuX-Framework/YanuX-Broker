@@ -3,7 +3,6 @@ const favicon = require('serve-favicon');
 const compress = require('compression');
 const helmet = require('helmet');
 const cors = require('cors');
-const winston = require('winston');
 
 const feathers = require('@feathersjs/feathers');
 const configuration = require('@feathersjs/configuration');
