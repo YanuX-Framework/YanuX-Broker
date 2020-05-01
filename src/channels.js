@@ -49,7 +49,7 @@ module.exports = function (app) {
       const ownerChannel = `users/${data.user._id}/clients/${data.client._id}`;
       channel = app.channel(ownerChannel);
       if (data && data.sharedWith) {
-        channel = app.channel(ownerChannel, ...data.sharedWith.map(u => `users/${u}/clients/${data.client._id}`));
+        channel = app.channel(ownerChannel, ...data.sharedWith.map(u => `users/${u._id}/clients/${data.client._id}`));
       } else {
         channel = app.channel(ownerChannel);
       }
