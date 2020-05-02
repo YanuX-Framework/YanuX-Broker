@@ -4,7 +4,7 @@ const isInternal = context => {
     return !context.params.provider
 }
 
-const checkOwnership = context => entity => {
+const checkOwnership = (context, sharedOwner = true) => entity => {
     //It should be an internal method, so allow access!.
     if (isInternal(context) || !entity) {
         return true;
@@ -25,13 +25,11 @@ const checkOwnership = context => entity => {
         context.params &&
         context.params.user &&
         context.params.user._id &&
-        (
-            entity.user.toString() === context.params.user._id.toString() ||
+        (entity.user.toString() === context.params.user._id.toString() ||
             (entity.user._id && entity.user._id.toString() === context.params.user._id.toString()) ||
-            (entity.sharedWith && entity.sharedWith.some(u => u._id ?
+            (sharedOwner && entity.sharedWith && entity.sharedWith.some(u => u._id ?
                 u._id.toString() === context.params.user._id.toString() :
-                u.toString() === context.params.user._id.toString())
-            )
+                u.toString() === context.params.user._id.toString()))
         )
     ) {
         if (entity.client && context.params.client && context.params.client._id) {
@@ -47,8 +45,8 @@ const checkOwnership = context => entity => {
  * to allow access to any resource. However, I may change this assumption in the future as I tighten
  * up the security policies.
  */
-module.exports.canWriteEntity = context => {
-    const checker = checkOwnership(context);
+module.exports.canWriteEntity = (context, sharedOwner = true) => {
+    const checker = checkOwnership(context, sharedOwner);
     if (isInternal(context)) {
         return context;
     } else if (context.method === 'create') {
@@ -77,13 +75,13 @@ module.exports.canWriteEntity = context => {
     }
 }
 
-module.exports.canReadEntity = context => {
+module.exports.canReadEntity = (context, sharedOwner = true) => {
     if (context.type !== 'after') {
         throw new GeneralError(`This hook should only be used as a 'after' hook.`);
     } else if (isInternal(context)) {
         return context
     } else {
-        const checker = checkOwnership(context);
+        const checker = checkOwnership(context, sharedOwner);
         let result;
         if (context.method === 'get') {
             result = context.result;

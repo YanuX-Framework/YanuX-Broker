@@ -10,6 +10,8 @@ module.exports = function (app) {
 
   const schema = new Schema({
     user: { type: Schema.Types.ObjectId, ref: 'users', required: true, unique: true },
+    //TODO: Implement "Dynamic" Proxemics Sharing
+    sharedWith: [{ type: Schema.Types.ObjectId, ref: 'users' }],
     state: { type: Schema.Types.Mixed, required: true, default: {} },
     brokerName: { type: String, required: true, default: app.get('name') }
   }, { timestamps: true, minimize: false });

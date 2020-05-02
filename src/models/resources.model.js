@@ -16,11 +16,8 @@ module.exports = function (app) {
     sharedWith: [{
       type: Schema.Types.ObjectId, ref: 'users', validate: {
         validator: function (v) {
-          return new Promise(
-            resolve => this.model
-              .findOne(this.getFilter())
-              .then(res => resolve(!res.user.equals(v)))
-          );
+          return new Promise((resolve, reject) => this.model.findOne(this.getFilter())
+            .then(res => resolve(!res.user.equals(v)).catch(e => reject(e))));
         }, message: 'A resource cannot be shared with its owner.'
       }
     }],
