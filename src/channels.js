@@ -61,6 +61,7 @@ module.exports = function (app) {
       channel = app.channel(app.channels);
     }
     return channel;
+    //return app.channel(app.channels);
   };
 
   app.publish(publisher);

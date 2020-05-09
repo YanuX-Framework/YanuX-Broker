@@ -14,17 +14,12 @@ function beforeCreate(context) {
 }
 
 function afterCreate(context) {
-  if (context.data && context.params && context.params.connection) {
+  if (context.result && context.result._id) {
     const onDisconnect = () => {
-      context.service.remove(null, {
-        query: {
-          user: context.data.user,
-          client: context.data.client,
-          device: context.data.device,
-          instanceUuid: context.data.instanceUuid
-        }
-      }).then(instances => context.app.debug('Removed Instances:', instances))
-        .catch(e => context.app.error('Failed to Remove Instances:', e));
+      context.service
+        .remove(context.result._id)
+        .then(instances => console.log('Removed Instances:', instances))
+        .catch(e => console.error('Failed to Remove Instances:', e));
     }
     if (context.params.provider === 'socketio') {
       context.params._socket.on('disconnect', onDisconnect);
