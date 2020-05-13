@@ -3,14 +3,17 @@ const { authenticate } = require('@feathersjs/authentication').hooks;
 const canReadEntity = require('../../hooks/authorization').canReadEntity;
 const canWriteEntity = require('../../hooks/authorization').canWriteEntity;
 
+const prevSharedWithBefore = require('../../hooks/prev-shared-with').prevSharedWithBefore;
+const prevSharedWithAfter = require('../../hooks/prev-shared-with').prevSharedWithAfter;
+
 module.exports = {
   before: {
     all: [authenticate('jwt', 'yanux')],
     find: [],
     get: [],
     create: [canWriteEntity],
-    update: [canWriteEntity],
-    patch: [canWriteEntity],
+    update: [canWriteEntity, prevSharedWithBefore],
+    patch: [canWriteEntity, prevSharedWithBefore],
     remove: [canWriteEntity]
   },
 
@@ -19,8 +22,8 @@ module.exports = {
     find: [canReadEntity],
     get: [canReadEntity],
     create: [],
-    update: [],
-    patch: [],
+    update: [prevSharedWithAfter],
+    patch: [prevSharedWithAfter],
     remove: []
   },
 

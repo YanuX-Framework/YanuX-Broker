@@ -1,5 +1,6 @@
 // Application hooks that run for every service
 const logger = require('./hooks/logger');
+const protectUserPassword = require('./hooks/authorization').protectUserPassword;
 
 module.exports = {
   before: {
@@ -13,7 +14,7 @@ module.exports = {
   },
 
   after: {
-    all: [logger()],
+    all: [protectUserPassword(), logger()],
     find: [],
     get: [],
     create: [],

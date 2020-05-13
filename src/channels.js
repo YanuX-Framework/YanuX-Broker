@@ -46,13 +46,15 @@ module.exports = function (app) {
     if (context.path === 'clients') {
       channel = app.channel(`clients/${data._id}`);
     } else if (data && data.client && data.user) {
-      const ownerChannel = `users/${data.user._id}/clients/${data.client._id}`;
-      channel = app.channel(ownerChannel);
-      if (data && data.sharedWith) {
-        channel = app.channel(ownerChannel, ...data.sharedWith.map(u => `users/${u._id}/clients/${data.client._id}`));
-      } else {
-        channel = app.channel(ownerChannel);
+      const channels = [];
+      channels.push(`users/${data.user._id}/clients/${data.client._id}`)
+      if (data.sharedWith) {
+        channels.push(...data.sharedWith.map(u => `users/${u._id}/clients/${data.client._id}`));
       }
+      if(context.result && context.result.prevSharedWith) {
+        channels.push(...context.result.prevSharedWith.map(u => `users/${u._id}/clients/${data.client._id}`));
+      }
+      channel = app.channel(...channels);
     } else if (data && data.client) {
       channel = app.channel(`clients/${data.client._id}`);
     } else if (data && data.user) {

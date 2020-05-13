@@ -94,3 +94,12 @@ module.exports.canReadEntity = (context, sharedOwner = true) => {
     }
 }
 
+module.exports.protectUserPassword = (entityName = 'user', fieldName = 'password') => {
+    return (context) => {
+        if (context.result && context.result[entityName] && context.result[entityName][fieldName]) {
+            delete context.result[entityName][fieldName]
+        }
+        return context;
+    }
+}
+

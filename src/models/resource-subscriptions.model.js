@@ -12,7 +12,7 @@ module.exports = function (app) {
     user: { type: Schema.Types.ObjectId, ref: 'users', required: true },
     client: { type: Schema.Types.ObjectId, ref: 'clients', required: true },
     resource: { type: Schema.Types.ObjectId, ref: 'resources', required: true }
-  }, { timestamps: true });
+  }, { timestamps: true, minimize: false });
 
   schema.index({ user: 1, client: 1 }, { unique: true });
 

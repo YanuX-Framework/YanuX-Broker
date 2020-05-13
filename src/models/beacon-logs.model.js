@@ -16,7 +16,7 @@ module.exports = function (app) {
     beaconKey: { type: String, required: true },
     beacon: { type: Object, required: true },
     brokerName: { type: String, required: true, default: app.get('name') }
-  }, { timestamps: true });
+  }, { timestamps: true, minimize: false });
 
   schema.pre('validate', function (next) {
     this.brokerName = app.get('name');

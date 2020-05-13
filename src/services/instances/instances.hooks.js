@@ -6,6 +6,9 @@ const protect = require('@feathersjs/authentication-local').hooks.protect;
 const canReadEntity = require('../../hooks/authorization').canReadEntity;
 const canWriteEntity = require('../../hooks/authorization').canWriteEntity;
 
+const prevSharedWithBefore = require('../../hooks/prev-shared-with').prevSharedWithBefore;
+const prevSharedWithAfter = require('../../hooks/prev-shared-with').prevSharedWithAfter;
+
 function beforeCreate(context) {
   if (context.data) {
     context.data.instanceUuid = context.data.instanceUuid || uuidv4();
@@ -37,8 +40,8 @@ module.exports = {
     find: [],
     get: [],
     create: [canWriteEntity, beforeCreate],
-    update: [canWriteEntity],
-    patch: [canWriteEntity],
+    update: [canWriteEntity, prevSharedWithBefore],
+    patch: [canWriteEntity, prevSharedWithBefore],
     remove: [canWriteEntity]
   },
   after: {
@@ -46,8 +49,8 @@ module.exports = {
     find: [canReadEntity],
     get: [canReadEntity],
     create: [afterCreate],
-    update: [],
-    patch: [],
+    update: [prevSharedWithAfter],
+    patch: [prevSharedWithAfter],
     remove: []
   },
   error: {
