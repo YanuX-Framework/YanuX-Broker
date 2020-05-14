@@ -10,7 +10,7 @@ module.exports = {
     find: [],
     get: [],
     create: [canWriteEntity],
-    update: [canWriteEntity],
+    update: [canWriteEntity, mongooseOptions({ upsert: true })],
     patch: [canWriteEntity, mongooseOptions({ upsert: true })],
     remove: [canWriteEntity]
   },

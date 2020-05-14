@@ -1,5 +1,7 @@
 const { authenticate } = require('@feathersjs/authentication').hooks;
 
+const mongooseOptions = require('../../hooks/mongoose-options');
+
 const canReadEntity = require('../../hooks/authorization').canReadEntity;
 const canWriteEntity = require('../../hooks/authorization').canWriteEntity;
 
@@ -12,8 +14,8 @@ module.exports = {
     find: [],
     get: [],
     create: [canWriteEntity],
-    update: [canWriteEntity, prevSharedWithBefore],
-    patch: [canWriteEntity, prevSharedWithBefore],
+    update: [canWriteEntity, prevSharedWithBefore, mongooseOptions({ upsert: true })],
+    patch: [canWriteEntity, prevSharedWithBefore, mongooseOptions({ upsert: true })],
     remove: [canWriteEntity]
   },
 
