@@ -32,8 +32,14 @@ const checkOwnership = (context, sharedOwner = true) => entity => {
                 u.toString() === context.params.user._id.toString()))
         )
     ) {
-        if (entity.client && context.params.client && context.params.client._id) {
-            return entity.client.toString() === context.params.client._id.toString();
+        console.log('Context Params Client Id:', context.params.client);
+        if (context.params && entity.client) {
+            const clientId = (context.params.client && context.params.client._id) ? context.params.client._id :
+                (context.params.authentication && context.params.authentication.payload && context.params.authentication.payload.client &&
+                    context.params.authentication.payload.client._id) ? context.params.authentication.payload.client._id : null;
+            if (clientId) {
+                return entity.client.toString() === clientId.toString();
+            } else { return false; }
         } else return true;
     }
     return false;
