@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const jose = require('jose');
 
 module.exports = app => {
     // Config Name
@@ -22,6 +23,13 @@ module.exports = app => {
     configKeys.private_key = process.env.KEYS_PRIVATE_KEY ? process.env.KEYS_PRIVATE_KEY : fs.readFileSync(path.normalize(configKeys.private_key_path), 'utf8');
     configKeys.public_key = process.env.KEYS_PUBLIC_KEY ? process.env.KEYS_PUBLIC_KEY : fs.readFileSync(path.normalize(configKeys.public_key_path), 'utf8');
     configKeys.combined_key = process.env.KEYS_COMBINED_KEY ? process.env.KEYS_COMBINED_KEY : fs.readFileSync(path.normalize(configKeys.combined_key_path), 'utf8');
+    configKeys.keystore = new jose.JWKS.KeyStore();
+    configKeys.private_jwk = jose.JWK.asKey(configKeys.private_key);
+    configKeys.public_jwk = jose.JWK.asKey(configKeys.public_key);
+    configKeys.combined_jwk = jose.JWK.asKey(configKeys.public_key);
+    configKeys.keystore.add(configKeys.private_jwk);
+    //configKeys.keystore.add(configKeys.public_jwk);
+    //configKeys.keystore.add(configKeys.combined_jwk);
     app.set('keys', configKeys);
 
     // Config Authentication
@@ -29,6 +37,9 @@ module.exports = app => {
 
     //// Config Authentication JWT Options
     configAuthentication.jwtOptions = configAuthentication.jwtOptions || {}
+    configAuthentication.jwtOptions.header =  configAuthentication.jwtOptions.header || {};
+    configAuthentication.jwtOptions.header.typ = process.env.AUTHENTICATION_JWT_OPTIONS_HEADER_TYP || configAuthentication.jwtOptions.header.typ;
+    configAuthentication.jwtOptions.header.jku = process.env.AUTHENTICATION_JWT_OPTIONS_HEADER_JKU || configAuthentication.jwtOptions.header.jku;
     configAuthentication.jwtOptions.audience = process.env.AUTHENTICATION_JWT_OPTIONS_AUDIENCE || configAuthentication.jwtOptions.audience;
     configAuthentication.jwtOptions.issuer = process.env.AUTHENTICATION_JWT_OPTIONS_ISSUER || configAuthentication.jwtOptions.issuer;
     configAuthentication.jwtOptions.algorithm = process.env.AUTHENTICATION_JWT_OPTIONS_ALGORITHM || configAuthentication.jwtOptions.algorithm;

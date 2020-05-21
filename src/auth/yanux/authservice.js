@@ -6,6 +6,13 @@ module.exports = class YanuxAuthenticationService extends AuthenticationService 
         const { user, client } = authResult;
         return { ...payload, user, client };
     }
+    async getTokenOptions(authResult, params) {
+        const jwtOptions = await super.getTokenOptions(authResult, params);
+        jwtOptions.header = {
+            kid: this.app.get('keys').private_jwk.kid,
+        };
+        return jwtOptions;
+    }
     async parse(req, res, ...names) {
         const strategies = this.getStrategies(...names)
             .filter(current => current && typeof current.parse === 'function');
