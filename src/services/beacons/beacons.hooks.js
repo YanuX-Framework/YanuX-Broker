@@ -152,14 +152,12 @@ function updateProxemics(context) {
                 proxemics.state[detectedDevice.deviceUuid] = detectedDevice.capabilities;
               }
               if (!_.isEqual(currProxemics.state, proxemics.state)) {
-                return context.app.service('proxemics').update(currProxemics._id, proxemics);
+                return context.app.service('proxemics').patch(currProxemics._id, proxemics);
               }
-            } else {
-              throw new GeneralError('Current proxemics state is missing.');
-            }
+            } else { throw new GeneralError('Current proxemics state is missing.'); }
           }
           resolve(context);
-        }).then(() => context).catch(e => reject(e));
+        }).catch(e => reject(e));
     });
   } else { return context; }
 }
