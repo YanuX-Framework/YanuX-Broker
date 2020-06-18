@@ -112,14 +112,12 @@ function updateProxemics(context) {
           if (!scanningDevice || !detectedDevice) {
             // If either of the devices is missing from the database it's either an error or there's nothing to do with them.
             throw new GeneralError('Either the scanning device or the detected device are absent from the database.');
-          } else if (!scanningDevice._id.equals(detectedDevice._id)) {
+          } else if (scanningDevice.user.equals(detectedDevice.user) && !scanningDevice._id.equals(detectedDevice._id)) {
             //TODO: 
             //Had to do the comparison this way, Feathers and/or Mongoose refuse to match the array directly. 
             //Replace this when/if I find a better solution.
             const beaconValuesProps = {};
-            scanningDevice.beaconValues.forEach((v, i) => {
-              beaconValuesProps['beacon.values.' + i] = v;
-            })
+            scanningDevice.beaconValues.forEach((v, i) => { beaconValuesProps['beacon.values.' + i] = v; })
             return Promise.all([
               context.app.service('beacons').find({
                 query: {
@@ -129,12 +127,7 @@ function updateProxemics(context) {
                   updatedAt: { $gt: new Date().getTime() - context.app.get('beacons').maxInactivityTime },
                 }
               }),
-              context.app.service('proxemics').find({
-                query: {
-                  $limit: 1,
-                  user: context.params.user._id
-                }
-              })
+              context.app.service('proxemics').find({ query: { $limit: 1, user: context.params.user._id } })
             ]);
           }
         }).then(result => {
