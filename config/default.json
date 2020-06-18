@@ -20,7 +20,7 @@
     "jwtOptions": {
       "header": {
         "typ": "access",
-        "jku": "http://localhost:3002/api/jwks"
+        "jku": "http://192.168.12.1:3002/api/jwks"
       },
       "audience": "https://www.yanux.org",
       "issuer": "YanuX-Broker",

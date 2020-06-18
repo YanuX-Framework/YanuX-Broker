@@ -49,7 +49,7 @@
     "feathers-hooks-common": "^5.0.3",
     "feathers-mongodb": "^6.1.0",
     "feathers-mongoose": "^8.3.0",
-    "helmet": "^3.23.0",
+    "helmet": "^3.23.1",
     "jose": "^1.27.1",
     "lodash": "^4.17.15",
     "mongodb": "^3.5.9",
