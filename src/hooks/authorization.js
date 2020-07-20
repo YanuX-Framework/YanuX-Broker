@@ -61,7 +61,9 @@ module.exports.canWriteEntity = (context, sharedOwner = true) => {
         return new Promise((resolve, reject) => {
             let promise = Promise.resolve(false);
             if (context.id) {
-                promise = context.service.get(context.id).then(entity => checker(entity))
+                promise = context.service.get(context.id)
+                    .then(entity => checker(entity))
+                    .catch(e => reject(new GeneralError('An unexpected error has happned.')))
             } else if (context.params.query) {
                 if (checker(context.params.query)) {
                     promise = Promise.resolve(true);
@@ -69,7 +71,7 @@ module.exports.canWriteEntity = (context, sharedOwner = true) => {
                     promise = context.service.find({ query: context.params.query }).then(entities => {
                         const results = entities.data ? entities.data : entities;
                         return results.every(checker);
-                    });
+                    }).catch(e => reject(new GeneralError('An unexpected error has happned.')));
                 }
             }
             promise.then(isOwner => {

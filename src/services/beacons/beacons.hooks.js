@@ -3,6 +3,8 @@ const _ = require('lodash');
 const { authenticate } = require('@feathersjs/authentication').hooks;
 const { GeneralError, Conflict } = require('@feathersjs/errors');
 
+const mongooseOptions = require('../../hooks/mongoose-options');
+
 const canReadEntity = require('../../hooks/authorization').canReadEntity;
 const canWriteEntity = require('../../hooks/authorization').canWriteEntity;
 
@@ -119,20 +121,23 @@ function updateProxemics(context) {
             const beaconValuesProps = {};
             scanningDevice.beaconValues.forEach((v, i) => { beaconValuesProps['beacon.values.' + i] = v; })
             return Promise.all([
-              context.app.service('beacons').find({
+              null,
+              //TODO: Temporarily disabled code!
+              /*context.app.service('beacons').find({
                 query: {
                   $limit: 1,
                   deviceUuid: detectedDevice.deviceUuid,
                   ...beaconValuesProps,
                   updatedAt: { $gt: new Date().getTime() - context.app.get('beacons').maxInactivityTime },
                 }
-              }),
+              }),*/
               context.app.service('proxemics').find({ query: { $limit: 1, user: context.params.user._id } })
             ]);
           }
         }).then(result => {
           if (result) {
-            const beacon = (result[0].data ? result[0].data : result[0])[0];
+            //TODO: Temporarily disabled code!
+            //const beacon = (result[0].data ? result[0].data : result[0])[0];
             const currProxemics = (result[1].data ? result[1].data : result[1])[0];
             if (currProxemics) {
               const proxemics = {
@@ -141,7 +146,8 @@ function updateProxemics(context) {
               }
               if (context.method === 'remove' || detectedBeacon.avgRssi < context.app.get('beacons').avgRssiThreshold) {
                 delete proxemics.state[detectedDevice.deviceUuid];
-              } else if (beacon && beacon.beacon.avgRssi >= context.app.get('beacons').avgRssiThreshold) {
+                //TODO: WARNING: Watch out for the temporarily disabled code below!
+              } else /*if (beacon && beacon.beacon.avgRssi >= context.app.get('beacons').avgRssiThreshold)*/ {
                 proxemics.state[detectedDevice.deviceUuid] = detectedDevice.capabilities;
               }
               if (!_.isEqual(currProxemics.state, proxemics.state)) {
@@ -161,8 +167,8 @@ module.exports = {
     find: [],
     get: [],
     create: [canWriteEntity, beforeCreate],
-    update: [canWriteEntity, beforePatchUpdate],
-    patch: [canWriteEntity, beforePatchUpdate],
+    update: [canWriteEntity, beforePatchUpdate, mongooseOptions({ upsert: true })],
+    patch: [canWriteEntity, beforePatchUpdate, mongooseOptions({ upsert: true })],
     remove: [canWriteEntity]
   },
   after: {

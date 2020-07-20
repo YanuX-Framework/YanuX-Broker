@@ -41,7 +41,7 @@
   },
   "beacons": {
     "maxInactivityTime": 5000,
-    "avgRssiThreshold": -60
+    "avgRssiThreshold": -65
   },
   "paginate": {
     "default": 10,
