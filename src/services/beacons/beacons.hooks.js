@@ -104,59 +104,45 @@ function updateProxemics(context) {
      * But it's working fine right now. 
      */
     return new Promise((resolve, reject) => {
-      context.app.service('proxemics').patch(null, { user: context.params.user._id }, { query: { user: context.params.user._id } })
-        .then(() => Promise.all([
-          context.app.service('devices').find({ query: { $limit: 1, deviceUuid: deviceUuid } }),
-          context.app.service('devices').find({ query: { $limit: 1, beaconValues: detectedBeacon.values } })
-        ])).then(devices => {
-          scanningDevice = (devices[0].data ? devices[0].data : devices[0])[0];
-          detectedDevice = (devices[1].data ? devices[1].data : devices[1])[0];
-          if (!scanningDevice || !detectedDevice) {
-            // If either of the devices is missing from the database it's either an error or there's nothing to do with them.
-            throw new GeneralError('Either the scanning device or the detected device are absent from the database.');
-          } else if (scanningDevice.user.equals(detectedDevice.user) && !scanningDevice._id.equals(detectedDevice._id)) {
-            //TODO: 
-            //Had to do the comparison this way, Feathers and/or Mongoose refuse to match the array directly. 
-            //Replace this when/if I find a better solution.
-            const beaconValuesProps = {};
-            scanningDevice.beaconValues.forEach((v, i) => { beaconValuesProps['beacon.values.' + i] = v; })
-            return Promise.all([
-              null,
-              //TODO: Temporarily disabled code!
-              /*context.app.service('beacons').find({
-                query: {
-                  $limit: 1,
-                  deviceUuid: detectedDevice.deviceUuid,
-                  ...beaconValuesProps,
-                  updatedAt: { $gt: new Date().getTime() - context.app.get('beacons').maxInactivityTime },
-                }
-              }),*/
-              context.app.service('proxemics').find({ query: { $limit: 1, user: context.params.user._id } })
-            ]);
+      Promise.all([
+        context.app.service('devices').find({ query: { $limit: 1, deviceUuid: deviceUuid } }),
+        context.app.service('devices').find({ query: { $limit: 1, beaconValues: detectedBeacon.values } })
+      ]).then(devices => {
+        scanningDevice = (devices[0].data ? devices[0].data : devices[0])[0];
+        detectedDevice = (devices[1].data ? devices[1].data : devices[1])[0];
+        if (!scanningDevice || !detectedDevice) {
+          // If either of the devices is missing from the database it's either an error or there's nothing to do with them.
+          throw new GeneralError('Either the scanning device or the detected device are absent from the database.');
+          //TODO: WARNING: Watch out for the temporarily disabled code below!
+        } else /* if (scanningDevice.user.equals(detectedDevice.user) && !scanningDevice._id.equals(detectedDevice._id)) */ {
+          //TODO: 
+          //Had to do the comparison this way, Feathers and/or Mongoose refuse to match the array directly. 
+          //Replace this when/if I find a better solution.
+          const beaconValuesProps = {}; detectedDevice.beaconValues.forEach((v, i) => { beaconValuesProps['beacon.values.' + i] = v; })
+          return Promise.all([
+            context.app.service('proxemics').find({ query: { $limit: 1, user: detectedDevice.user } }),
+            //TODO: I should probably make this query "sharing aware"!            
+            context.app.service('beacons').find({
+              query: { ...beaconValuesProps, updatedAt: { $gt: new Date().getTime() - context.app.get('beacons').maxInactivityTime } }
+            })
+          ]);
+        }
+      }).then(result => {
+        if (result) {
+          const currProxemics = (result[0].data ? result[0].data : result[0])[0];
+          const beacons = result[1].data ? result[1].data : result[1];
+          const proxemics = {
+            user: currProxemics ? currProxemics.user : detectedDevice.user || detectedDevice.user,
+            state: currProxemics ? _.cloneDeep(currProxemics.state) : {} || {}
           }
-        }).then(result => {
-          if (result) {
-            //TODO: Temporarily disabled code!
-            //const beacon = (result[0].data ? result[0].data : result[0])[0];
-            const currProxemics = (result[1].data ? result[1].data : result[1])[0];
-            if (currProxemics) {
-              const proxemics = {
-                user: context.params.user._id,
-                state: _.cloneDeep(currProxemics.state) || {}
-              }
-              if (context.method === 'remove' || detectedBeacon.avgRssi < context.app.get('beacons').avgRssiThreshold) {
-                delete proxemics.state[detectedDevice.deviceUuid];
-                //TODO: WARNING: Watch out for the temporarily disabled code below!
-              } else /*if (beacon && beacon.beacon.avgRssi >= context.app.get('beacons').avgRssiThreshold)*/ {
-                proxemics.state[detectedDevice.deviceUuid] = detectedDevice.capabilities;
-              }
-              if (!_.isEqual(currProxemics.state, proxemics.state)) {
-                return context.app.service('proxemics').patch(currProxemics._id, proxemics);
-              }
-            } else { throw new GeneralError('Current proxemics state is missing.'); }
+          if (context.method === 'remove' || beacons.every(b => b.beacon.avgRssi < context.app.get('beacons').avgRssiThreshold)) {
+            delete proxemics.state[detectedDevice.deviceUuid];
+          } else { proxemics.state[detectedDevice.deviceUuid] = detectedDevice.capabilities; }
+          if (!currProxemics || !_.isEqual(currProxemics.state, proxemics.state)) {
+            return context.app.service('proxemics').patch(null, proxemics, { query: { user: proxemics.user } })
           }
-          resolve(context);
-        }).catch(e => reject(e));
+        }
+      }).then(() => { resolve(context); }).catch(e => reject(e));
     });
   } else { return context; }
 }
