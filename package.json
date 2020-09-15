@@ -46,15 +46,15 @@
     "debug": "^4.1.1",
     "dnssd": "^0.4.1",
     "feathers-authentication-hooks": "^1.0.2",
-    "feathers-hooks-common": "^5.0.3",
+    "feathers-hooks-common": "^5.0.4",
     "feathers-mongodb": "^6.1.0",
     "feathers-mongoose": "^8.3.1",
-    "helmet": "^3.23.3",
-    "jose": "^1.28.0",
+    "helmet": "^4.1.1",
+    "jose": "^2.0.2",
     "lodash": "^4.17.20",
-    "mongodb": "^3.6.0",
+    "mongodb": "^3.6.2",
     "mongodb-core": "^3.2.7",
-    "mongoose": "^5.10.0",
+    "mongoose": "^5.10.5",
     "nodemon": "^2.0.4",
     "passport-custom": "^1.1.1",
     "request": "^2.88.2",
@@ -65,8 +65,8 @@
     "ws": "^7.3.1"
   },
   "devDependencies": {
-    "ajv": "^6.12.4",
-    "eslint": "^7.7.0",
-    "mocha": "^8.1.1"
+    "ajv": "^6.12.5",
+    "eslint": "^7.9.0",
+    "mocha": "^8.1.3"
   }
 }
