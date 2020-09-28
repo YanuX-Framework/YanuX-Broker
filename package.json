@@ -4,16 +4,16 @@
   "version": "1.0.0",
   "repository": "github:YanuX-Framework/YanuX-Broker",
   "private": true,
-  "main": "src",
-  "keywords": [
-    "feathers"
-  ],
   "author": {
     "name": "Pedro Albuquerque Santos",
     "email": "pedro@albuquerques.net",
     "url": "https://pedro.albuquerques.net"
   },
-  "license": "AGPL-3.0",
+  "license": "AGPL-3.0-or-later",
+  "main": "src",
+  "keywords": [
+    "feathers"
+  ],
   "contributors": [],
   "bugs": {},
   "directories": {
@@ -47,7 +47,7 @@
     "dnssd": "^0.4.1",
     "feathers-authentication-hooks": "^1.0.2",
     "feathers-hooks-common": "^5.0.4",
-    "feathers-mongodb": "^6.1.0",
+    "feathers-mongodb": "^6.2.0",
     "feathers-mongoose": "^8.3.1",
     "helmet": "^4.1.1",
     "jose": "^2.0.2",
@@ -66,7 +66,7 @@
   },
   "devDependencies": {
     "ajv": "^6.12.5",
-    "eslint": "^7.9.0",
+    "eslint": "^7.10.0",
     "mocha": "^8.1.3"
   }
 }
