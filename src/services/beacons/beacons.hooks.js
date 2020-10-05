@@ -8,6 +8,13 @@ const mongooseOptions = require('../../hooks/mongoose-options');
 const canReadEntity = require('../../hooks/authorization').canReadEntity;
 const canWriteEntity = require('../../hooks/authorization').canWriteEntity;
 
+function clearInactive(context) {
+  const cutOffDateTime = new Date(new Date().getTime() - context.app.get('beacons').maxInactivityTime);
+  return context.service.remove(null, {
+    query: { updatedAt: { $lt: cutOffDateTime } }
+  }).then(() => context).catch(e => { throw e; })
+}
+
 function logBeacons(context) {
   if (context.result) {
     let results;
@@ -90,6 +97,7 @@ function updateProxemics(context) {
       deviceUuid = deviceUuid || context.result[0].deviceUuid;
       detectedBeacon = detectedBeacon || context.result[0].beacon;
     }
+
     if (!deviceUuid || !detectedBeacon) {
       return context;
     }

@@ -2,6 +2,8 @@
 // 
 // See http://mongoosejs.com/docs/models.html
 // for more of what you can do here.
+const brokerNamePlugin = require('./plugins/broker-name.plugin');
+
 module.exports = function (app) {
   const modelName = 'location';
   const mongooseClient = app.get('mongooseClient');
@@ -25,6 +27,7 @@ module.exports = function (app) {
     y: { type: Number }
   }, { _id: false });
 
+
   const schema = new Schema({
     username: { type: String, required: true },
     deviceUuid: { type: String, required: true },
@@ -40,6 +43,13 @@ module.exports = function (app) {
     'proximity.beacon.minor': 1
   }, { unique: true });
 
+  /** TODO:
+   * Add/Develop a new Mongoose plugin that keeps the "brokerName" field up-to-date: https://mongoosejs.com/docs/plugins.html
+   * I tried to do it in other models by using the pre-validate middleware, but it doesn't cover all bases.
+   * I'll probably have to use more middleware "stages": https://mongoosejs.com/docs/middleware.html#types-of-middleware
+   * DONE: Test it a little bit more and add it to the rest of the models!
+   */
+  schema.plugin(brokerNamePlugin, { brokerName: app.get('name') });
 
   // This is necessary to avoid model compilation errors in watch mode
   // see https://mongoosejs.com/docs/api/connection.html#connection_Connection-deleteModel
