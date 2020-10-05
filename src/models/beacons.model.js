@@ -12,6 +12,7 @@ module.exports = function (app) {
     /** TODO: Maybe I should make a direct relationship to the devices collection! **/
     deviceUuid: { type: String, required: true },
     beaconKey: { type: String, required: true },
+    /** TODO: Create a proper Schema for beacon! */
     beacon: { type: Schema.Types.Mixed, required: true },
     brokerName: { type: String, required: true, default: app.get('name') }
   }, { timestamps: true, minimize: false });

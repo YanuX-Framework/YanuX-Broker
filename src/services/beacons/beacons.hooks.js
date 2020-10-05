@@ -1,7 +1,7 @@
 const _ = require('lodash');
 
 const { authenticate } = require('@feathersjs/authentication').hooks;
-const { GeneralError, Conflict } = require('@feathersjs/errors');
+const { GeneralError } = require('@feathersjs/errors');
 
 const mongooseOptions = require('../../hooks/mongoose-options');
 
@@ -29,12 +29,13 @@ function logBeacons(context) {
   } else return context;
 }
 
+//TODO: This hook should no longer be necessary since we moved to use "PATCH + upsert" instead of CREATE.
 function beforeCreate(context) {
   if (context.params.user && context.data.beaconKey && context.data.deviceUuid) {
     const user = context.params.user;
     const beaconkey = context.data.beaconKey;
     const deviceUuid = context.data.deviceUuid;
-    return this.remove(null, {
+    return context.service.remove(null, {
       query: {
         user: user._id,
         deviceUuid: deviceUuid,
@@ -44,14 +45,12 @@ function beforeCreate(context) {
   }
 }
 
+//TODO: This hook can probably be simplified since we added upsert support to UPDATE and PATCH.
 function beforePatchUpdate(context) {
-  if (
-    context.data &&
-    context.data.beacon &&
-    context.params.query) {
+  if (context.data && context.data.beacon && context.params.query) {
     const beacon = context.data.beacon;
     const query = context.params.query;
-    return this.find({ query: query, paginate: false })
+    return context.service.find({ query: query, paginate: false })
       .then(beacons => {
         if (!beacons.length) {
           context.service.create({
@@ -65,17 +64,13 @@ function beforePatchUpdate(context) {
           }).catch(e => { throw e; });
         } else if (beacons.every(b => beacon.timestamp >= b.beacon.timestamp)) {
           return context;
-        } else {
-          throw new GeneralError('The new beacon\'s timestamp is older than the one(s) already stored.');
-        }
+        } else { throw new GeneralError('The new beacon\'s timestamp is older than the one(s) already stored.'); }
       }).catch(e => { throw e; });
   }
 }
 
 function updateProxemics(context) {
-  if (context.type !== 'after') {
-    throw new GeneralError('This must be run as an \'after\' hook.')
-  }
+  if (context.type !== 'after') { throw new GeneralError('This must be run as an \'after\' hook.') }
   if (context.method !== 'create' && context.method !== 'patch' && context.method !== 'update' && context.method !== 'remove') {
     return context;
   }

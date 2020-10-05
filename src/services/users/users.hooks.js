@@ -9,7 +9,7 @@ module.exports = {
     all: [],
     find: [authenticate('jwt', 'yanux')],
     get: [authenticate('jwt', 'yanux')],
-    create: [disallow('external'), hashPassword('password')],
+    create: [/*disallow('external'),*/ hashPassword('password')],
     update: [disallow('external'), canWriteEntity, hashPassword('password'), authenticate('jwt', 'yanux')],
     patch: [disallow('external'), canWriteEntity, hashPassword('password'), authenticate('jwt', 'yanux')],
     remove: [disallow('external'), canWriteEntity, authenticate('jwt', 'yanux')]
