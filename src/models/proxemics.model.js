@@ -2,6 +2,8 @@
 // 
 // See http://mongoosejs.com/docs/models.html
 // for more of what you can do here.
+const brokerNamePlugin = require('./plugins/broker-name.plugin');
+
 module.exports = function (app) {
   const modelName = 'proxemics';
   const mongooseClient = app.get('mongooseClient');
@@ -12,15 +14,10 @@ module.exports = function (app) {
     user: { type: Schema.Types.ObjectId, ref: 'users', required: true, unique: true },
     //TODO: Implement "Dynamic" Proxemics Sharing
     sharedWith: [{ type: Schema.Types.ObjectId, ref: 'users' }],
-    state: { type: Schema.Types.Mixed, required: true, default: {} },
-    brokerName: { type: String, required: true, default: app.get('name') }
+    state: { type: Schema.Types.Mixed, required: true, default: {} }
   }, { timestamps: true, minimize: false });
 
-  schema.pre('validate', function (next) {
-    this.brokerName = app.get('name');
-    next();
-  });
-
+  schema.plugin(brokerNamePlugin, { brokerName: app.get('name') });
 
   // This is necessary to avoid model compilation errors in watch mode
   // see https://mongoosejs.com/docs/api/connection.html#connection_Connection-deleteModel

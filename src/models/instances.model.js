@@ -2,6 +2,8 @@
 // 
 // See http://mongoosejs.com/docs/models.html
 // for more of what you can do here.
+const brokerNamePlugin = require('./plugins/broker-name.plugin');
+
 module.exports = function (app) {
   const modelName = 'instances';
   const mongooseClient = app.get('mongooseClient');
@@ -22,14 +24,10 @@ module.exports = function (app) {
     instanceUuid: { type: String, required: true, unique: true },
     name: { type: String, required: false },
     active: { type: Boolean, required: true, default: true },
-    componentsDistribution,
-    brokerName: { type: String, required: true, default: app.get('name') }
+    componentsDistribution
   }, { timestamps: true, minimize: false });
 
-  schema.pre('validate', function (next) {
-    this.brokerName = app.get('name');
-    next();
-  });
+  schema.plugin(brokerNamePlugin, { brokerName: app.get('name') });
 
   //TODO: Should the "device" also be part of this unique key? Perhaps, at the very least, a device can be used by different users at different times.
   schema.index({ user: 1, client: 1, device: 1, instanceUuid: 1 }, { unique: true });

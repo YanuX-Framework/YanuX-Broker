@@ -2,12 +2,14 @@
 // 
 // See http://mongoosejs.com/docs/models.html
 // for more of what you can do here.
+const brokerNamePlugin = require('./plugins/broker-name.plugin');
+
 module.exports = function (app) {
   const modelName = 'devices';
   const mongooseClient = app.get('mongooseClient');
 
   const { Schema } = mongooseClient;
-  
+
   const schema = new Schema({
     user: { type: Schema.Types.ObjectId, ref: 'users', required: true },
     deviceUuid: { type: String, required: true, unique: true },
@@ -18,14 +20,10 @@ module.exports = function (app) {
      * Come up with a Capabilities Model that can be used for automatic user interface adaptation.
      * For now, I'll just leave as a "mixed" type.
      */
-    capabilities: { type: Schema.Types.Mixed },
-    brokerName: { type: String, required: true, default: app.get('name') }
+    capabilities: { type: Schema.Types.Mixed }
   }, { timestamps: true, minimize: false });
 
-  schema.pre('validate', function (next) {
-    this.brokerName = app.get('name');
-    next();
-  });
+  schema.plugin(brokerNamePlugin, { brokerName: app.get('name') });
 
   // This is necessary to avoid model compilation errors in watch mode
   // see https://mongoosejs.com/docs/api/connection.html#connection_Connection-deleteModel

@@ -81,35 +81,31 @@ function updateProxemics(context) {
   if (context.method !== 'create' && context.method !== 'patch' && context.method !== 'update' && context.method !== 'remove') {
     return context;
   }
-  // TODO: **FINISH** implementing proxemics notifications.
-  // Only run the "meat" of this hook for external requests!
-  if (context.params.provider) {
-    let scanningDevice, detectedDevice, deviceUuid, detectedBeacon;
-    if (context.data) {
-      deviceUuid = context.data.deviceUuid;
-      detectedBeacon = context.data.beacon;
-    }
-    if (context.params && context.params.query) {
-      deviceUuid = deviceUuid || context.params.query.deviceUuid;
-      detectedBeacon = detectedBeacon || context.params.query.beacon;
-    }
-    if (context.result && context.result.length > 0) {
-      deviceUuid = deviceUuid || context.result[0].deviceUuid;
-      detectedBeacon = detectedBeacon || context.result[0].beacon;
-    }
 
-    if (!deviceUuid || !detectedBeacon) {
-      return context;
-    }
-    /** 
-     * NOTE: 
-     * I'm not sure if this is the best idea to make sure that a proxemics record is ALWAYS present for the current user. 
-     * But it's working fine right now. 
-     */
+  let beacons;
+  if (context.data) {
+    beacons = _.isArray(context.data) ? context.data : [context.data];
+  }
+  if (context.result) {
+    beacons = beacons ||
+      _.isArray(context.result) ? context.result :
+      _.isObject(context.result) && _.isArray(context.result.data) ? context.result.data :
+        [context.result];
+  }
+  if (context.params && context.params.query) {
+    beacons = beacons || [context.params.query];
+  }
+
+  if (!beacons.every(b => b.deviceUuid && b.beacon && b.beacon.values)) {
+    return context;
+  }
+
+  const proximityUpdate = b => {
     return new Promise((resolve, reject) => {
+      let scanningDevice, detectedDevice;
       Promise.all([
-        context.app.service('devices').find({ query: { $limit: 1, deviceUuid: deviceUuid } }),
-        context.app.service('devices').find({ query: { $limit: 1, beaconValues: detectedBeacon.values } })
+        context.app.service('devices').find({ query: { $limit: 1, deviceUuid: b.deviceUuid } }),
+        context.app.service('devices').find({ query: { $limit: 1, beaconValues: b.beacon.values } })
       ]).then(devices => {
         scanningDevice = (devices[0].data ? devices[0].data : devices[0])[0];
         detectedDevice = (devices[1].data ? devices[1].data : devices[1])[0];
@@ -133,21 +129,28 @@ function updateProxemics(context) {
       }).then(result => {
         if (result) {
           const currProxemics = (result[0].data ? result[0].data : result[0])[0];
-          const beacons = result[1].data ? result[1].data : result[1];
+          const currBeacons = result[1].data ? result[1].data : result[1];
+          
           const proxemics = {
             user: currProxemics ? currProxemics.user : detectedDevice.user || detectedDevice.user,
             state: currProxemics ? _.cloneDeep(currProxemics.state) : {} || {}
           }
-          if (context.method === 'remove' || beacons.every(b => b.beacon.avgRssi < context.app.get('beacons').avgRssiThreshold)) {
+
+          if (context.method === 'remove' || currBeacons.every(b => b.beacon.avgRssi < context.app.get('beacons').avgRssiThreshold)) {
             delete proxemics.state[detectedDevice.deviceUuid];
-          } else { proxemics.state[detectedDevice.deviceUuid] = detectedDevice.capabilities; }
+          } else {
+            proxemics.state[detectedDevice.deviceUuid] = detectedDevice.capabilities;
+          }
+
           if (!currProxemics || !_.isEqual(currProxemics.state, proxemics.state)) {
             return context.app.service('proxemics').patch(null, proxemics, { query: { user: proxemics.user } })
           }
         }
       }).then(() => { resolve(context); }).catch(e => reject(e));
     });
-  } else { return context; }
+  }
+
+  return Promise.all(beacons.map(b => proximityUpdate(b))).then(() => context).catch(e => { throw e });
 }
 
 module.exports = {

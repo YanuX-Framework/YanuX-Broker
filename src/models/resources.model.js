@@ -2,6 +2,8 @@
 // 
 // See http://mongoosejs.com/docs/models.html
 // for more of what you can do here.
+const brokerNamePlugin = require('./plugins/broker-name.plugin');
+
 module.exports = function (app) {
   const modelName = 'resources';
   const mongooseClient = app.get('mongooseClient');
@@ -21,16 +23,12 @@ module.exports = function (app) {
         }, message: 'A resource cannot be shared with its owner.'
       }
     }],
-    data: { type: Object, required: true, default: {} },
-    brokerName: { type: String, required: true, default: app.get('name') }
+    data: { type: Object, required: true, default: {} }
   }, { timestamps: true, minimize: false });
 
   schema.index({ user: 1, client: 1, default: 1 }, { unique: true, partialFilterExpression: { default: true } });
 
-  schema.pre('validate', function (next) {
-    this.brokerName = app.get('name');
-    next();
-  });
+  schema.plugin(brokerNamePlugin, { brokerName: app.get('name') });
 
   schema.pre('deleteOne', function (next) {
     this.model.findOne(this.getFilter()).then(res => {

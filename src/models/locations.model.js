@@ -1,11 +1,11 @@
-// location-model.js - A mongoose model
+// locations-model.js - A mongoose model
 // 
 // See http://mongoosejs.com/docs/models.html
 // for more of what you can do here.
 const brokerNamePlugin = require('./plugins/broker-name.plugin');
 
 module.exports = function (app) {
-  const modelName = 'location';
+  const modelName = 'locations';
   const mongooseClient = app.get('mongooseClient');
   const { Schema } = mongooseClient;
 

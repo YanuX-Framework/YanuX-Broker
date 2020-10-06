@@ -2,6 +2,8 @@
 // 
 // See http://mongoosejs.com/docs/models.html
 // for more of what you can do here.
+const brokerNamePlugin = require('./plugins/broker-name.plugin');
+
 module.exports = function (app) {
   const modelName = 'resourceSubscriptions';
   const mongooseClient = app.get('mongooseClient');
@@ -15,6 +17,8 @@ module.exports = function (app) {
   }, { timestamps: true, minimize: false });
 
   schema.index({ user: 1, client: 1 }, { unique: true });
+
+  schema.plugin(brokerNamePlugin, { brokerName: app.get('name') });
 
   // This is necessary to avoid model compilation errors in watch mode
   // see https://mongoosejs.com/docs/api/connection.html#connection_Connection-deleteModel

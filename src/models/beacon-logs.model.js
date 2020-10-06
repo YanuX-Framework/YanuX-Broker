@@ -2,6 +2,8 @@
 // 
 // See http://mongoosejs.com/docs/models.html
 // for more of what you can do here.
+const brokerNamePlugin = require('./plugins/broker-name.plugin');
+
 module.exports = function (app) {
   const modelName = 'beaconLogs';
   const mongooseClient = app.get('mongooseClient');
@@ -14,14 +16,10 @@ module.exports = function (app) {
     deviceUuid: { type: String, required: true },
     method: { type: String, required: true },
     beaconKey: { type: String, required: true },
-    beacon: { type: Object, required: true },
-    brokerName: { type: String, required: true, default: app.get('name') }
+    beacon: { type: Object, required: true }
   }, { timestamps: true, minimize: false });
 
-  schema.pre('validate', function (next) {
-    this.brokerName = app.get('name');
-    next();
-  });
+  schema.plugin(brokerNamePlugin, { brokerName: app.get('name') });
 
   // This is necessary to avoid model compilation errors in watch mode
   // see https://mongoosejs.com/docs/api/connection.html#connection_Connection-deleteModel
