@@ -102,25 +102,25 @@ function updateProxemics(context) {
 
   const proximityUpdate = b => {
     return new Promise((resolve, reject) => {
-      let scanningDevice, detectedDevice;
+      let scanningDevice, detectedDevice, currUser;
       Promise.all([
         context.app.service('devices').find({ query: { $limit: 1, deviceUuid: b.deviceUuid } }),
         context.app.service('devices').find({ query: { $limit: 1, beaconValues: b.beacon.values } })
       ]).then(devices => {
         scanningDevice = (devices[0].data ? devices[0].data : devices[0])[0];
         detectedDevice = (devices[1].data ? devices[1].data : devices[1])[0];
+        currUser = scanningDevice.user;
         if (!scanningDevice || !detectedDevice) {
           // If either of the devices is missing from the database it's either an error or there's nothing to do with them.
           throw new GeneralError('Either the scanning device or the detected device are absent from the database.');
           //TODO: WARNING: Watch out for the temporarily disabled code below!
-        } else /* if (scanningDevice.user.equals(detectedDevice.user) && !scanningDevice._id.equals(detectedDevice._id)) */ {
+        } else if (true /* scanningDevice.user.equals(detectedDevice.user) */ /*&& !scanningDevice._id.equals(detectedDevice._id)*/) {
           //TODO: 
           //Had to do the comparison this way, Feathers and/or Mongoose refuse to match the array directly. 
           //Replace this when/if I find a better solution.
           const beaconValuesProps = {}; detectedDevice.beaconValues.forEach((v, i) => { beaconValuesProps['beacon.values.' + i] = v; })
           return Promise.all([
-            context.app.service('proxemics').find({ query: { $limit: 1, user: detectedDevice.user } }),
-            //TODO: I should probably make this query "sharing aware"!            
+            context.app.service('proxemics').find({ query: { $limit: 1, user: currUser } }),
             context.app.service('beacons').find({
               query: { ...beaconValuesProps, updatedAt: { $gt: new Date().getTime() - context.app.get('beacons').maxInactivityTime } }
             })
@@ -130,9 +130,9 @@ function updateProxemics(context) {
         if (result) {
           const currProxemics = (result[0].data ? result[0].data : result[0])[0];
           const currBeacons = result[1].data ? result[1].data : result[1];
-          
+
           const proxemics = {
-            user: currProxemics ? currProxemics.user : detectedDevice.user || detectedDevice.user,
+            user: currProxemics ? currProxemics.user : currUser || currUser,
             state: currProxemics ? _.cloneDeep(currProxemics.state) : {} || {}
           }
 
