@@ -24,7 +24,8 @@ module.exports = function (app) {
   const PositionSchema = new Schema({
     place: { type: String },
     x: { type: Number },
-    y: { type: Number }
+    y: { type: Number },
+    zone: { type: String }
   }, { _id: false });
 
 
@@ -40,7 +41,8 @@ module.exports = function (app) {
     username: 1, deviceUuid: 1,
     'proximity.beacon.uuid': 1,
     'proximity.beacon.major': 1,
-    'proximity.beacon.minor': 1
+    'proximity.beacon.minor': 1,
+    position: 1
   }, { unique: true });
 
   /** TODO:

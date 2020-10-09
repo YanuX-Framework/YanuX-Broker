@@ -127,7 +127,7 @@ function updateProxemics(context) {
           ]);
         }
       }).then(result => {
-        if (result) {
+        if (result && result[0] && result[1]) {
           const currProxemics = (result[0].data ? result[0].data : result[0])[0];
           const currBeacons = result[1].data ? result[1].data : result[1];
 

@@ -1,7 +1,5 @@
 const { authenticate } = require('@feathersjs/authentication').hooks;
 const { GeneralError } = require('@feathersjs/errors');
-const { resolve } = require('dnssd');
-const { reject } = require('lodash');
 const _ = require('lodash');
 const combinations = require('combinations');
 const { euclidean } = require('ml-distance-euclidean');
@@ -49,7 +47,7 @@ function updateProxemics(context) {
 
   if (!locations.some(l => l.deviceUuid && (
     (l.proximity && l.proximity.beacon && l.proximity.beacon.uuid && l.proximity.beacon.major && l.proximity.beacon.minor) ||
-    (l.position && l.position.x && l.position.y && l.position.place)
+    (l.position && l.position.x && l.position.y && l.position.place && l.position.zone)
   ))) { return context; }
 
   //TODO: Check what I'm doing on ./beacons/beacon.hooks.js "updateProxemics" function for some inspiration.
@@ -71,12 +69,12 @@ function updateProxemics(context) {
       ]).then(devices => {
         scanningDevice = (devices[0].data ? devices[0].data : devices[0])[0];
         detectedDevice = (devices[1].data ? devices[1].data : devices[1])[0];
-        currUser = detectedDevice.user;
         if (!scanningDevice || !detectedDevice) {
           // If either of the devices is missing from the database it's either an error or there's nothing to do with them.
           throw new GeneralError('Either the scanning device or the detected device are absent from the database.');
           //TODO: WARNING: Watch out for the temporarily disabled code below!
         } else if (true /* scanningDevice.user.equals(detectedDevice.user) */ /*&& !scanningDevice._id.equals(detectedDevice._id)*/) {
+          currUser = detectedDevice.user;
           return Promise.all([
             context.app.service('proxemics').find({ query: { $limit: 1, user: currUser } }),
             context.app.service('locations').find({
@@ -90,7 +88,7 @@ function updateProxemics(context) {
           ]);
         }
       }).then(result => {
-        if (result) {
+        if (result && result[0] && result[1]) {
           const currProxemics = (result[0].data ? result[0].data : result[0])[0];
           const currLocations = result[1].data ? result[1].data : result[1];
 
@@ -119,33 +117,43 @@ function updateProxemics(context) {
       context.app.service('devices')
         .find({ query: { $limit: 1, deviceUuid: l.deviceUuid } })
         .then(d => {
-          currDevice = d;
-          return context.app.service('users').get(currDevice.user);
+          if (d) {
+            currDevice = d.data ? d.data[0] : d[0];
+            return context.app.service('users').get(currDevice.user);
+          }
         }).then(u => {
-          currUser = u;
-          return context.app.service('locations').find({ query: { username: currUser.email, place: l.position.place } });
+          if (u) {
+            currUser = u;
+            return context.app.service('locations').find({ query: { username: currUser.email, 'position.place': l.position.place } });
+          }
         }).then(ls => {
-          const locationPairs = combinations(ls, 2, 2);
-          const currDeviceUuids = [];
-          locationPairs.forEach(([loc1, loc2]) => {
-            const distance = euclidean([loc1.position.x, loc1.position.y], [loc2.position.x, loc2.position.y]);
-            if (distance < context.app.get('locations').proximityDistanceThreshold) {
-              currDeviceUuids.push(loc1.deviceUuid, loc2.deviceUuid);
-            }
-          });
-          return context.app.service('devices').find({ query: { $or: currDeviceUuids.map(deviceUuid => { deviceUuid }) } });
+          if (ls && ls.length >= 2) {
+            const locationPairs = combinations(ls.data ? ls.data : ls, 2, 2);
+            const currDeviceUuids = new Set();
+            locationPairs.forEach(([loc1, loc2]) => {
+              const distance = euclidean([loc1.position.x, loc1.position.y], [loc2.position.x, loc2.position.y]);
+              if (distance < context.app.get('locations').proximityDistanceThreshold) {
+                currDeviceUuids.add(loc1.deviceUuid);
+                currDeviceUuids.add(loc2.deviceUuid);
+              }
+            });
+            return context.app.service('devices').find({ query: { $or: Array.from(currDeviceUuids).map(deviceUuid => deviceUuid) } });
+          }
         }).then(ds => {
-          const proxemics = {
-            user: currUser._id,
-            state: ds.reduce((acc, curr) => Object.assign(acc, { [curr.deviceUuid]: curr.capabilities }))
-          };
-          return context.app.service('proxemics').patch(null, proxemics, { query: { user: proxemics.user } });
+          if (ds) {
+            const proxemics = {
+              user: currUser._id,
+              state: ds.reduce((acc, curr) => Object.assign(acc, { [curr.deviceUuid]: curr.capabilities }))
+            };
+            return context.app.service('proxemics').patch(null, proxemics, { query: { user: proxemics.user } });
+          }
         }).then(() => { resolve(true); }).catch(e => reject(e));
     });
   }
 
   return Promise.all(locations.map(l => {
-    if (l.proximity) { return proximityUpdate(l); } else if (l.position) { return positionUpdate(l); }
+    if (l.proximity) { return proximityUpdate(l); }
+    else if (l.position) { return positionUpdate(l); }
     else { throw new GeneralError('Something is wrong! A location should always have proximity or position information.') }
   })).then(() => context).catch(e => { throw e });
 }
