@@ -7,6 +7,7 @@ module.exports = function (app) {
   const options = {
     Model: createModel(app),
     multi: true,
+    whitelist: [ '$exists' ]
     /* paginate: app.get('paginate') */
   };
 

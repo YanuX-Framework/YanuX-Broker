@@ -9,10 +9,12 @@ const canReadEntity = require('../../hooks/authorization').canReadEntity;
 const canWriteEntity = require('../../hooks/authorization').canWriteEntity;
 
 function clearInactive(context) {
-  const cutOffDateTime = new Date(new Date().getTime() - context.app.get('beacons').maxInactivityTime);
-  return context.service.remove(null, {
-    query: { updatedAt: { $lt: cutOffDateTime } }
-  }).then(() => context).catch(e => { throw e; })
+  if (context.method !== 'remove') {
+    const cutOffDateTime = new Date(new Date().getTime() - context.app.get('beacons').maxInactivityTime);
+    return context.service.remove(null, {
+      query: { updatedAt: { $lt: cutOffDateTime } }
+    }).then(() => context).catch(e => { throw e; })
+  } else { return context; }
 }
 
 function logBeacons(context) {
@@ -113,8 +115,8 @@ function updateProxemics(context) {
         if (!scanningDevice || !detectedDevice) {
           // If either of the devices is missing from the database it's either an error or there's nothing to do with them.
           throw new GeneralError('Either the scanning device or the detected device are absent from the database.');
-          //TODO: WARNING: Watch out for the temporarily disabled code below!
-        } else if (true /* scanningDevice.user.equals(detectedDevice.user) */ /*&& !scanningDevice._id.equals(detectedDevice._id)*/) {
+          //TODO: Make sure that I don't want to disable the following condition!
+        } else if (scanningDevice.user.equals(detectedDevice.user) && !scanningDevice._id.equals(detectedDevice._id)) {
           //TODO: 
           //Had to do the comparison this way, Feathers and/or Mongoose refuse to match the array directly. 
           //Replace this when/if I find a better solution.

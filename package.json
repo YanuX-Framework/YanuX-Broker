@@ -57,7 +57,7 @@
     "mongodb": "^3.6.2",
     "mongodb-core": "^3.2.7",
     "mongoose": "^5.10.9",
-    "nodemon": "^2.0.4",
+    "nodemon": "^2.0.5",
     "passport-custom": "^1.1.1",
     "request": "^2.88.2",
     "request-promise": "^4.2.6",
@@ -67,8 +67,8 @@
     "ws": "^7.3.1"
   },
   "devDependencies": {
-    "ajv": "^6.12.5",
-    "eslint": "^7.10.0",
+    "ajv": "^6.12.6",
+    "eslint": "^7.11.0",
     "mocha": "^8.1.3"
   }
 }
