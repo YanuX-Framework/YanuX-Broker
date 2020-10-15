@@ -163,9 +163,9 @@ function updateProxemics(context) {
         }).then(ds => {
           const devices = ds.data ? ds.data : ds;
           if (devices) {
-            const proxemics = {
+            const proxemics = { 
               user: currUser._id,
-              state: devices.reduce((acc, curr) => Object.assign(acc, { [curr.deviceUuid]: curr.capabilities }), {})
+              state: devices.reduce((out, device) => Object.assign(out, { [device.deviceUuid]: device.capabilities }), {})
             };
             return context.app.service('proxemics').patch(null, proxemics, { query: { user: proxemics.user } });
           }

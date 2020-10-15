@@ -111,20 +111,23 @@ function updateProxemics(context) {
       ]).then(devices => {
         scanningDevice = (devices[0].data ? devices[0].data : devices[0])[0];
         detectedDevice = (devices[1].data ? devices[1].data : devices[1])[0];
-        currUser = scanningDevice.user;
         if (!scanningDevice || !detectedDevice) {
           // If either of the devices is missing from the database it's either an error or there's nothing to do with them.
           throw new GeneralError('Either the scanning device or the detected device are absent from the database.');
-          //TODO: Make sure that I don't want to disable the following condition!
-        } else if (scanningDevice.user.equals(detectedDevice.user) && !scanningDevice._id.equals(detectedDevice._id)) {
-          //TODO: 
-          //Had to do the comparison this way, Feathers and/or Mongoose refuse to match the array directly. 
-          //Replace this when/if I find a better solution.
-          const beaconValuesProps = {}; detectedDevice.beaconValues.forEach((v, i) => { beaconValuesProps['beacon.values.' + i] = v; })
+          //TODO: Make sure that if want to disable the following condition!
+        } else if (true /* scanningDevice.user.equals(detectedDevice.user)*/ /* && scanningDevice.deviceUuid !== detectedDevice.deviceUuid */) {
+          //TODO:
+          //Not sure if currUser should be scanningDevice.user or detectedDevice.user. 
+          //The former makes more sense, but from experience I feel that the latter is somewhat more consistent.
+          currUser = detectedDevice.user;
           return Promise.all([
             context.app.service('proxemics').find({ query: { $limit: 1, user: currUser } }),
             context.app.service('beacons').find({
-              query: { ...beaconValuesProps, updatedAt: { $gt: new Date().getTime() - context.app.get('beacons').maxInactivityTime } }
+              query: {
+                //TODO: Had to do the comparison this way, Feathers and/or Mongoose refuse to match the array directly. 
+                ...detectedDevice.beaconValues.reduce((out, curr, i) => Object.assign(out, { ['beacon.values.' + i]: curr }, {})),
+                updatedAt: { $gt: new Date().getTime() - context.app.get('beacons').maxInactivityTime }
+              }
             })
           ]);
         }
@@ -157,7 +160,7 @@ function updateProxemics(context) {
 
 module.exports = {
   before: {
-    all: [authenticate('jwt', 'yanux')],
+    all: [authenticate('jwt', 'yanux'), clearInactive],
     find: [],
     get: [],
     create: [canWriteEntity, beforeCreate],
