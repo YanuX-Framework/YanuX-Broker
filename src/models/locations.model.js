@@ -25,6 +25,7 @@ module.exports = function (app) {
     place: { type: String },
     x: { type: Number },
     y: { type: Number },
+    orientation: { type: Number },
     zone: { type: String }
   }, { _id: false });
 
