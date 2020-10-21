@@ -13,7 +13,7 @@ module.exports = function (app) {
   const schema = new Schema({
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     /** TODO: Maybe I should a direct relationship to the devices collection! **/
-    deviceUuid: { type: String, required: true },
+    deviceUuid: { type: String, required: true, lowercase: true, trim: true },
     method: { type: String, required: true },
     beaconKey: { type: String, required: true },
     beacon: { type: Object, required: true }

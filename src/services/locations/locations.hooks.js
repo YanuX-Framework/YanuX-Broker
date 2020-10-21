@@ -1,8 +1,11 @@
 const { authenticate } = require('@feathersjs/authentication').hooks;
 const { GeneralError } = require('@feathersjs/errors');
+
 const _ = require('lodash');
 const combinations = require('combinations');
 const { euclidean } = require('ml-distance-euclidean');
+const { dot, norm } = require('mathjs');
+
 const mongooseOptions = require('../../hooks/mongoose-options');
 
 function clearInactive(context) {
@@ -47,27 +50,38 @@ function updateProxemics(context) {
     locations = locations || [context.params.query];
   }
 
-  if (!locations.some(l => l.deviceUuid && (
-    (l.proximity && l.proximity.beacon && l.proximity.beacon.uuid && l.proximity.beacon.major && l.proximity.beacon.minor) ||
-    (l.position && l.position.x && l.position.y && l.position.place && l.position.zone)
-  ))) { return context; }
+  if (!locations.every(l =>
+    l.deviceUuid &&
+    (
+      (l.proximity && l.proximity.beacon && _.isString(l.proximity.beacon.uuid) && _.isNumber(l.proximity.beacon.major) && _.isNumber(l.proximity.beacon.minor)) ||
+      (l.position && _.isNumber(l.position.x) && _.isNumber(l.position.y) && _.isString(l.position.place) && _.isString(l.position.zone))
+    )
+  )) { return context; }
+
+  const radToDeg = v => v * 180 / Math.PI;
+  const angleBetweenVectors = (v1, v2) => Math.acos(dot(v1, v2) / (norm(v1) * norm(v2)));
 
   const getCloseDeviceUuids = locationPositions => {
     if (locationPositions && locationPositions.length >= 2) {
       const locationPairs = combinations(locationPositions.data ? locationPositions.data : locationPositions, 2, 2);
       const currDeviceUuids = new Set();
-      locationPairs.forEach(([loc1, loc2]) => {
-        const distance = euclidean([loc1.position.x, loc1.position.y], [loc2.position.x, loc2.position.y]);
-        if (distance < context.app.get('locations').proximityDistanceThreshold) {
-          currDeviceUuids.add(loc1.deviceUuid); currDeviceUuids.add(loc2.deviceUuid);
+      locationPairs.forEach(([l1, l2]) => {
+        if (!_.isNil(l1.position.x) && !_.isNil(l1.position.y) && !_.isNil(l2.position.x) && !_.isNil(l2.position.y) &&
+          _.isArray(l1.position.headingVector) && _.isArray(l2.position.headingVector)) {
+          const distance = euclidean([l1.position.x, l1.position.y], [l2.position.x, l2.position.y]);
+          const angle = radToDeg(angleBetweenVectors(l1.position.headingVector, l2.position.headingVector));
+          if (distance < context.app.get('locations').proximityDistanceThreshold /* && 
+              TODO: Add more conditions that do something with angle */) {
+            currDeviceUuids.add(l1.deviceUuid); currDeviceUuids.add(l2.deviceUuid);
+          }
         }
       });
       return Array.from(currDeviceUuids);
     } else { return []; }
   }
 
-  //TODO: Check what I'm doing on ./beacons/beacon.hooks.js "updateProxemics" function for some inspiration.
-  const proximityUpdate = l => {
+  const proximityUpdate = (l, ignoreAbsolutePositions = false) => {
+    const now = new Date().getTime();
     let scanningDevice, detectedDevice, currUser;
     return new Promise((resolve, reject) => {
       Promise.all([
@@ -75,8 +89,7 @@ function updateProxemics(context) {
         context.app.service('devices').find({
           query: {
             $limit: 1, beaconValues: [
-              //TODO: Normalize UUIDs and other hexadecimal strings to either lowercase or uppercase.
-              l.proximity.beacon.uuid.toUpperCase(),
+              l.proximity.beacon.uuid.toLowerCase(),
               l.proximity.beacon.major,
               l.proximity.beacon.minor
             ]
@@ -94,45 +107,46 @@ function updateProxemics(context) {
                 'proximity.beacon.uuid': l.proximity.beacon.uuid,
                 'proximity.beacon.major': l.proximity.beacon.major,
                 'proximity.beacon.minor': l.proximity.beacon.minor,
-                updatedAt: { $gt: new Date().getTime() - context.app.get('locations').maxInactivityTime }
+                updatedAt: { $gt: now - context.app.get('locations').maxInactivityTime }
               }
             }),
-            context.app.service('locations').find({
-              query: {
-                username: currUser.email,
-                position: { $exists: true },
-                updatedAt: { $gt: new Date().getTime() - context.app.get('locations').maxInactivityTime }
-              }
-            })
+            ignoreAbsolutePositions ? Promise.resolve([]) :
+              context.app.service('locations').find({
+                query: {
+                  username: currUser.email,
+                  position: { $exists: true },
+                  updatedAt: { $gt: now - context.app.get('locations').maxInactivityTime }
+                }
+              })
           ]);
         }
       }).then(result => {
         if (result && result[0] && result[1]) {
-          const currProxemics = (result[0].data ? result[0].data : result[0])[0];
-          const currProximityLocations = result[1].data ? result[1].data : result[1];
-          const currPositionLocations = result[2].data ? result[2].data : result[2];
+          const currentProxemics = (result[0].data ? result[0].data : result[0])[0];
+          const proximityLocations = result[1].data ? result[1].data : result[1];
 
           const proxemics = {
-            user: currProxemics ? currProxemics.user : currUser || currUser,
-            state: currProxemics ? _.cloneDeep(currProxemics.state) : {} || {}
+            user: currentProxemics ? currentProxemics.user : currUser || currUser,
+            state: currentProxemics ? _.cloneDeep(currentProxemics.state) : {} || {}
           }
 
           if (detectedDevice) {
-            if (context.method === 'remove' || currProximityLocations.every(cl => cl.proximity.distance > context.app.get('locations').proximityDistanceThreshold)) {
-              delete proxemics.state[detectedDevice.deviceUuid];
-            } else {
+            if (proximityLocations.length && proximityLocations.every(cl => cl.proximity.distance < context.app.get('locations').proximityDistanceThreshold)) {
               proxemics.state[detectedDevice.deviceUuid] = detectedDevice.capabilities;
+            } else { delete proxemics.state[detectedDevice.deviceUuid]; }
+          }
+
+          if (!ignoreAbsolutePositions) {
+            const absolutePositionLocations = result[2].data ? result[2].data : result[2];
+            const currDeviceUuids = getCloseDeviceUuids(absolutePositionLocations);
+            for (const deviceUuid in proxemics.state) {
+              if (!currDeviceUuids.find(dUuid => dUuid === deviceUuid)) {
+                delete proxemics.state[deviceUuid];
+              }
             }
           }
 
-          const currDeviceUuids = getCloseDeviceUuids(currPositionLocations);
-          for (const deviceUuid in proxemics.state) {
-            if (!currDeviceUuids.find(dUuid => dUuid === deviceUuid)) {
-              delete proxemics.state[deviceUuid];
-            }
-          }
-
-          if (!currProxemics || !_.isEqual(currProxemics.state, proxemics.state)) {
+          if (!currentProxemics || !_.isEqual(currentProxemics.state, proxemics.state)) {
             return context.app.service('proxemics').patch(null, proxemics, { query: { user: proxemics.user } })
           }
         }
@@ -141,8 +155,9 @@ function updateProxemics(context) {
   }
 
   const positionUpdate = l => {
+    const now = new Date().getTime();
+    let currDevice, currUser;
     return new Promise((resolve, reject) => {
-      let currDevice, currUser;
       context.app.service('devices')
         .find({ query: { $limit: 1, deviceUuid: l.deviceUuid } })
         .then(d => {
@@ -156,19 +171,32 @@ function updateProxemics(context) {
             return context.app.service('locations').find({ query: { username: currUser.email, 'position.place': l.position.place } });
           }
         }).then(ls => {
-          const currDeviceUuids = getCloseDeviceUuids(ls);
+          const coLocations = ls.data ? ls.data : ls;
+          const currDeviceUuids = getCloseDeviceUuids(coLocations);
           if (currDeviceUuids.length) {
             return context.app.service('devices').find({ query: { $or: currDeviceUuids.map(deviceUuid => { return { deviceUuid }; }) } });
           } else { return []; }
         }).then(ds => {
           const devices = ds.data ? ds.data : ds;
           if (devices) {
-            const proxemics = { 
+            const proxemics = {
               user: currUser._id,
               state: devices.reduce((out, device) => Object.assign(out, { [device.deviceUuid]: device.capabilities }), {})
             };
-            return context.app.service('proxemics').patch(null, proxemics, { query: { user: proxemics.user } });
+            return Promise.all([
+              context.app.service('proxemics').patch(null, proxemics, { query: { user: proxemics.user } }),
+              context.app.service('locations').find({
+                query: {
+                  username: currUser.email,
+                  proximity: { $exists: true },
+                  updatedAt: { $gt: now - context.app.get('locations').maxInactivityTime }
+                }
+              })
+            ]);
           }
+        }).then(result => {
+          const proximityLocations = result[1].data ? result[1].data : result[1];
+          return Promise.all(proximityLocations.map(pl => proximityUpdate(pl, true)));
         }).then(() => { resolve(true); }).catch(e => reject(e));
     });
   }

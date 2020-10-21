@@ -21,7 +21,7 @@ module.exports = function (app) {
     device: { type: Schema.Types.ObjectId, ref: 'devices', required: true },
     //TODO: Implement "Dynamic" Instance Sharing
     sharedWith: [{ type: Schema.Types.ObjectId, ref: 'users' }],
-    instanceUuid: { type: String, required: true, unique: true },
+    instanceUuid: { type: String, required: true, unique: true, lowercase: true, trim: true },
     name: { type: String, required: false },
     active: { type: Boolean, required: true, default: true },
     componentsDistribution

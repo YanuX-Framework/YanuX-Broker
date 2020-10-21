@@ -133,21 +133,19 @@ function updateProxemics(context) {
         }
       }).then(result => {
         if (result && result[0] && result[1]) {
-          const currProxemics = (result[0].data ? result[0].data : result[0])[0];
-          const currBeacons = result[1].data ? result[1].data : result[1];
+          const currentProxemics = (result[0].data ? result[0].data : result[0])[0];
+          const currentBeacons = result[1].data ? result[1].data : result[1];
 
           const proxemics = {
-            user: currProxemics ? currProxemics.user : currUser || currUser,
-            state: currProxemics ? _.cloneDeep(currProxemics.state) : {} || {}
+            user: currentProxemics ? currentProxemics.user : currUser || currUser,
+            state: currentProxemics ? _.cloneDeep(currentProxemics.state) : {} || {}
           }
 
-          if (context.method === 'remove' || currBeacons.every(b => b.beacon.avgRssi < context.app.get('beacons').avgRssiThreshold)) {
-            delete proxemics.state[detectedDevice.deviceUuid];
-          } else {
+          if (currentBeacons.length && currentBeacons.every(b => b.beacon.avgRssi > context.app.get('beacons').avgRssiThreshold)) {
             proxemics.state[detectedDevice.deviceUuid] = detectedDevice.capabilities;
-          }
+          } else { delete proxemics.state[detectedDevice.deviceUuid]; }
 
-          if (!currProxemics || !_.isEqual(currProxemics.state, proxemics.state)) {
+          if (!currentProxemics || !_.isEqual(currentProxemics.state, proxemics.state)) {
             return context.app.service('proxemics').patch(null, proxemics, { query: { user: proxemics.user } })
           }
         }
