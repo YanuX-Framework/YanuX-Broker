@@ -57,7 +57,7 @@
     "ml-distance-euclidean": "^2.0.0",
     "mongodb": "^3.6.2",
     "mongodb-core": "^3.2.7",
-    "mongoose": "^5.10.9",
+    "mongoose": "^5.10.10",
     "nodemon": "^2.0.6",
     "passport-custom": "^1.1.1",
     "request": "^2.88.2",
