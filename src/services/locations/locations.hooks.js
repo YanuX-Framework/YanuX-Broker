@@ -69,9 +69,13 @@ function updateProxemics(context) {
         if (!_.isNil(l1.position.x) && !_.isNil(l1.position.y) && !_.isNil(l2.position.x) && !_.isNil(l2.position.y) &&
           _.isArray(l1.position.headingVector) && _.isArray(l2.position.headingVector)) {
           const distance = euclidean([l1.position.x, l1.position.y], [l2.position.x, l2.position.y]);
-          const angle = radToDeg(angleBetweenVectors(l1.position.headingVector, l2.position.headingVector));
-          if (distance < context.app.get('locations').proximityDistanceThreshold /* && 
-              TODO: Add more conditions that do something with angle */) {
+          const L1L2Vec = [l2.position.x - l1.position.x, l2.position.y - l1.position.y]
+          const L2L1Vec = [l1.position.x - l2.position.x, l1.position.y - l2.position.y]
+          const viewAngleL1 = radToDeg(angleBetweenVectors(l1.position.headingVector, L1L2Vec))
+          const viewAngleL2 = radToDeg(angleBetweenVectors(l2.position.headingVector, L2L1Vec))
+          if (distance < context.app.get('locations').proximityDistanceThreshold &&
+            viewAngleL1 < context.app.get('locations').viewAngleThreshold &&
+            viewAngleL2 < context.app.get('locations').viewAngleThreshold) {
             currDeviceUuids.add(l1.deviceUuid); currDeviceUuids.add(l2.deviceUuid);
           }
         }

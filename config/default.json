@@ -44,8 +44,9 @@
     "avgRssiThreshold": -65
   },
   "locations": {
-    "maxInactivityTime": 6000,
-    "proximityDistanceThreshold": 3
+    "maxInactivityTime": 7500,
+    "proximityDistanceThreshold": 3,
+    "viewAngleThreshold": 90
   },
   "paginate": {
     "default": 10,

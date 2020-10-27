@@ -57,26 +57,6 @@ module.exports = function (app) {
    */
   schema.plugin(brokerNamePlugin, { brokerName: app.get('name') });
 
-  const degToRad = v => v * Math.PI / 180;
-  const headingVectorFromOrientation = orientation => [Math.cos(orientation), Math.sin(orientation)];
-
-  schema.pre(['validate', 'save', 'updateOne'], { document: true, query: false }, function (next) {
-    if (this.position && !_.isNil(this.position.orientation)) {
-      this.position.headingVector = headingVectorFromOrientation(degToRad(this.position.orientation));
-    }
-    next();
-  });
-
-  schema.pre(['findOneAndUpdate', 'update', 'updateOne', 'updateMany'], { document: false, query: true }, function (next) {
-    const update = this.getUpdate();
-    const orientation = update.position ? update.position.orientation : null;
-    if (!_.isNil(orientation)) {
-      update.position.headingVector = headingVectorFromOrientation(degToRad(orientation));
-    }
-    this.setUpdate(update);
-    next();
-  });
-
   // This is necessary to avoid model compilation errors in watch mode
   // see https://mongoosejs.com/docs/api/connection.html#connection_Connection-deleteModel
   if (mongooseClient.modelNames().includes(modelName)) {
