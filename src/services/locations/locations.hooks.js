@@ -102,7 +102,8 @@ function updateProxemics(context) {
       ]).then(devices => {
         scanningDevice = (devices[0].data ? devices[0].data : devices[0])[0];
         detectedDevice = (devices[1].data ? devices[1].data : devices[1])[0];
-        if (scanningDevice /* && detectedDevice && scanningDevice.user.equals(detectedDevice.user) && !scanningDevice._id.equals(detectedDevice._id) */) {
+        if (scanningDevice && scanningDevice.user
+          /* && detectedDevice && scanningDevice.user.equals(detectedDevice.user) && !scanningDevice._id.equals(detectedDevice._id) */) {
           currUser = scanningDevice.user;
           return Promise.all([
             context.app.service('proxemics').find({ query: { $limit: 1, user: currUser } }),
