@@ -1,10 +1,12 @@
+const util = require('util');
+
 const { authenticate } = require('@feathersjs/authentication').hooks;
 const { GeneralError } = require('@feathersjs/errors');
 
 const _ = require('lodash');
 const combinations = require('combinations');
 const { euclidean } = require('ml-distance-euclidean');
-const { dot, norm } = require('mathjs');
+//const { dot, norm } = require('mathjs');
 
 const mongooseOptions = require('../../hooks/mongoose-options');
 
@@ -58,10 +60,9 @@ function updateProxemics(context) {
     )
   )) { return context; }
 
-  const radToDeg = v => v * 180 / Math.PI;
-  const angleBetweenVectors = (v1, v2) => Math.acos(dot(v1, v2) / (norm(v1) * norm(v2)));
-
   const getCloseDeviceUuids = locationPositions => {
+    //const radToDeg = v => v * 180 / Math.PI;
+    //const angleBetweenVectors = (v1, v2) => Math.acos(dot(v1, v2) / (norm(v1) * norm(v2)));
     if (locationPositions && locationPositions.length >= 2) {
       const locationPairs = combinations(locationPositions.data ? locationPositions.data : locationPositions, 2, 2);
       const currDeviceUuids = new Set();
@@ -69,13 +70,25 @@ function updateProxemics(context) {
         if (!_.isNil(l1.position.x) && !_.isNil(l1.position.y) && !_.isNil(l2.position.x) && !_.isNil(l2.position.y) &&
           _.isArray(l1.position.headingVector) && _.isArray(l2.position.headingVector)) {
           const distance = euclidean([l1.position.x, l1.position.y], [l2.position.x, l2.position.y]);
-          const L1L2Vec = [l2.position.x - l1.position.x, l2.position.y - l1.position.y]
-          const L2L1Vec = [l1.position.x - l2.position.x, l1.position.y - l2.position.y]
-          const viewAngleL1 = radToDeg(angleBetweenVectors(l1.position.headingVector, L1L2Vec))
-          const viewAngleL2 = radToDeg(angleBetweenVectors(l2.position.headingVector, L2L1Vec))
-          if (distance < context.app.get('locations').proximityDistanceThreshold &&
-            viewAngleL1 < context.app.get('locations').viewAngleThreshold &&
-            viewAngleL2 < context.app.get('locations').viewAngleThreshold) {
+          const orientationDiff = Math.abs(l1.position.orientation - l2.position.orientation)
+          // //const angleBetweenHeadings = radToDeg(angleBetweenVectors(l1.position.headingVector, l2.position.headingVector));
+          // //const L1L2Vec = [l2.position.x - l1.position.x, l2.position.y - l1.position.y];
+          // //const L2L1Vec = [l1.position.x - l2.position.x, l1.position.y - l2.position.y];
+          // //const viewAngleL1 = radToDeg(angleBetweenVectors(l1.position.headingVector, L1L2Vec));
+          // //const viewAngleL2 = radToDeg(angleBetweenVectors(l2.position.headingVector, L2L1Vec));
+          // console.log('--------------------------------------------------------------------------------')
+          // console.log('L1:', util.inspect(l1, false, null, true));
+          // console.log('L2:', util.inspect(l2, false, null, true));
+          // console.log(
+          //   'Distance:', distance,
+          //   'Orientation Difference:', orientationDiff,
+          //   //'Angle Between Headings:', angleBetweenHeadings
+          // );
+          // //console.log('L1L2:', L1L2Vec, 'L2L1:', L2L1Vec);
+          // //console.log('View Angle L1:', viewAngleL1, 'L2:', viewAngleL2);
+          // console.log('--------------------------------------------------------------------------------')
+          if (distance < context.app.get('locations').proximityDistanceThreshold
+            && orientationDiff < context.app.get('locations').viewAngleThreshold) {
             currDeviceUuids.add(l1.deviceUuid); currDeviceUuids.add(l2.deviceUuid);
           }
         }
@@ -168,7 +181,9 @@ function updateProxemics(context) {
         .then(d => {
           if (d) {
             currDevice = d.data ? d.data[0] : d[0];
-            return context.app.service('users').get(currDevice.user);
+            if (currDevice) {
+              return context.app.service('users').get(currDevice.user);
+            }
           }
         }).then(u => {
           if (u) {
