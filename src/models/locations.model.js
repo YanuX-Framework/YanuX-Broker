@@ -2,8 +2,6 @@
 // 
 // See http://mongoosejs.com/docs/models.html
 // for more of what you can do here.
-const { isNil } = require('lodash');
-const _ = require('lodash');
 const brokerNamePlugin = require('./plugins/broker-name.plugin');
 
 module.exports = function (app) {
@@ -20,7 +18,7 @@ module.exports = function (app) {
   const ProximitySchema = new Schema({
     beacon: { type: BeaconSchema, required: true },
     distance: { type: Number, required: true },
-    zone: { type: String }
+    zone: { type: String, required: false }
   }, { _id: false });
 
   const PositionSchema = new Schema({
@@ -28,8 +26,8 @@ module.exports = function (app) {
     x: { type: Number, required: true },
     y: { type: Number, required: true },
     orientation: { type: Number, required: true },
-    headingVector: { type: [Number], required: true },
-    zone: { type: String }
+    headingVector: { type: [Number], required: false },
+    zone: { type: String, required: false }
   }, { _id: false });
 
 
