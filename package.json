@@ -51,7 +51,7 @@
     "feathers-mongodb": "^6.2.0",
     "feathers-mongoose": "^8.3.1",
     "helmet": "^4.1.1",
-    "jose": "^2.0.2",
+    "jose": "^2.0.3",
     "lodash": "^4.17.20",
     "mathjs": "^7.5.1",
     "ml-distance-euclidean": "^2.0.0",
