@@ -191,11 +191,13 @@ function updateProxemics(context) {
             return context.app.service('locations').find({ query: { username: currUser.email, 'position.place': l.position.place } });
           }
         }).then(ls => {
-          const coLocations = ls.data ? ls.data : ls;
-          const currDeviceUuids = getCloseDeviceUuids(coLocations);
-          if (currDeviceUuids.length) {
-            return context.app.service('devices').find({ query: { $or: currDeviceUuids.map(deviceUuid => { return { deviceUuid }; }) } });
-          } else { return []; }
+          if (ls) {
+            const coLocations = ls.data ? ls.data : ls;
+            const currDeviceUuids = getCloseDeviceUuids(coLocations);
+            if (currDeviceUuids.length) {
+              return context.app.service('devices').find({ query: { $or: currDeviceUuids.map(deviceUuid => { return { deviceUuid }; }) } });
+            } else { return []; }
+          }
         }).then(ds => {
           const devices = ds.data ? ds.data : ds;
           if (devices) {

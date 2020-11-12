@@ -33,14 +33,14 @@
     "mocha": "mocha test/ --recursive --exit"
   },
   "dependencies": {
-    "@feathersjs/authentication": "^4.5.9",
-    "@feathersjs/authentication-local": "^4.5.9",
-    "@feathersjs/authentication-oauth": "^4.5.9",
-    "@feathersjs/configuration": "^4.5.9",
-    "@feathersjs/errors": "^4.5.9",
-    "@feathersjs/express": "^4.5.9",
-    "@feathersjs/feathers": "^4.5.9",
-    "@feathersjs/socketio": "^4.5.9",
+    "@feathersjs/authentication": "^4.5.10",
+    "@feathersjs/authentication-local": "^4.5.10",
+    "@feathersjs/authentication-oauth": "^4.5.10",
+    "@feathersjs/configuration": "^4.5.10",
+    "@feathersjs/errors": "^4.5.10",
+    "@feathersjs/express": "^4.5.10",
+    "@feathersjs/feathers": "^4.5.10",
+    "@feathersjs/socketio": "^4.5.10",
     "combinations": "^1.0.0",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
@@ -53,7 +53,7 @@
     "helmet": "^4.2.0",
     "jose": "^2.0.3",
     "lodash": "^4.17.20",
-    "mathjs": "^8.0.0",
+    "mathjs": "^8.0.1",
     "ml-distance-euclidean": "^2.0.0",
     "mongodb": "^3.6.3",
     "mongodb-core": "^3.2.7",
@@ -65,11 +65,11 @@
     "serve-favicon": "^2.5.0",
     "uuid": "^8.3.1",
     "winston": "^3.3.3",
-    "ws": "^7.3.1"
+    "ws": "^7.4.0"
   },
   "devDependencies": {
     "ajv": "^6.12.6",
-    "eslint": "^7.12.1",
+    "eslint": "^7.13.0",
     "mocha": "^8.2.1"
   }
 }

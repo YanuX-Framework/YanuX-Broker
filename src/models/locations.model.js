@@ -35,8 +35,19 @@ module.exports = function (app) {
     username: { type: String, required: true },
     deviceUuid: { type: String, required: true },
     timestamp: { type: Date, required: true, default: Date.now },
-    proximity: { type: ProximitySchema, required: function () { return !this.position } },
-    position: { type: PositionSchema, required: function () { return !this.proximity } }
+    //TODO: I don't think that this validation is being called upon on all cases. Check if I need query middleware.
+    proximity: {
+      type: ProximitySchema, required: function () {
+        if (this.position) { return true; }
+        else { return false; }
+      }
+    },
+    position: {
+      type: PositionSchema, required: function () {
+        if (this.proximity) { return true; }
+        else { return false; }
+      }
+    }
   }, { timestamps: true, minimize: false });
 
   schema.index({
