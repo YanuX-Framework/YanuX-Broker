@@ -60,6 +60,8 @@ function updateProxemics(context) {
     )
   )) { return context; }
 
+  const orientationDifference = (o1, o2) => (o2 - o1 + 540) % 360 - 180;
+
   const getCloseDeviceUuids = locationPositions => {
     //const radToDeg = v => v * 180 / Math.PI;
     //const angleBetweenVectors = (v1, v2) => Math.acos(dot(v1, v2) / (norm(v1) * norm(v2)));
@@ -70,7 +72,7 @@ function updateProxemics(context) {
         if (!_.isNil(l1.position.x) && !_.isNil(l1.position.y) && !_.isNil(l2.position.x) && !_.isNil(l2.position.y) &&
           _.isArray(l1.position.headingVector) && _.isArray(l2.position.headingVector)) {
           const distance = euclidean([l1.position.x, l1.position.y], [l2.position.x, l2.position.y]);
-          const orientationDiff = Math.abs(l1.position.orientation - l2.position.orientation)
+          const orientationDiff = Math.abs(orientationDifference(l1.position.orientation, l2.position.orientation))
           // //const angleBetweenHeadings = radToDeg(angleBetweenVectors(l1.position.headingVector, l2.position.headingVector));
           // //const L1L2Vec = [l2.position.x - l1.position.x, l2.position.y - l1.position.y];
           // //const L2L1Vec = [l1.position.x - l2.position.x, l1.position.y - l2.position.y];
