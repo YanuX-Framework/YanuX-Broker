@@ -45,7 +45,7 @@
   },
   "locations": {
     "maxInactivityTime": 6000,
-    "proximityDistanceThreshold": 1.5,
+    "proximityDistanceThreshold": 3,
     "viewAngleThreshold": 90
   },
   "paginate": {
