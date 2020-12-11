@@ -40,12 +40,12 @@
     }
   },
   "beacons": {
-    "maxInactivityTime": 6000,
+    "maxInactivityTime": 4000,
     "avgRssiThreshold": -65
   },
   "locations": {
-    "maxInactivityTime": 6000,
-    "proximityDistanceThreshold": 2,
+    "maxInactivityTime": 4000,
+    "proximityDistanceThreshold": 2.5,
     "viewAngleThreshold": 90
   },
   "paginate": {

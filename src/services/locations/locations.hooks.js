@@ -3,10 +3,11 @@ const util = require('util');
 const { authenticate } = require('@feathersjs/authentication').hooks;
 const { GeneralError } = require('@feathersjs/errors');
 
+const feather = require('@feathersjs/feathers')
+
 const _ = require('lodash');
 const combinations = require('combinations');
 const { euclidean } = require('ml-distance-euclidean');
-//const { dot, norm } = require('mathjs');
 
 const mongooseOptions = require('../../hooks/mongoose-options');
 
@@ -19,21 +20,34 @@ function clearInactive(context) {
   } else { return context; }
 }
 
-function beforePatchUpdate(context) {
-  if (context.data && context.params.query) {
-    const location = context.data;
-    return context.service.find({ query: context.params.query, paginate: false })
-      .then(locations => {
-        const locationTimestamp = new Date(location.timestamp);
-        if (locations.every(l => locationTimestamp >= l.timestamp)) {
-          return context;
-        } else { throw new GeneralError('The new location\'s timestamp is older than the one(s) already stored.'); }
-      }).catch(e => { throw e; });
+function skipSelfScan(context) {
+  if (context.type !== 'before') { throw new GeneralError('This must be run as an \'before\' hook.') }
+
+  if (context.method !== 'create' && context.method !== 'patch' && context.method !== 'update') {
+    return context;
   }
+
+  //TODO: Refactor to consider multiple location updates
+  const location = context.data;
+  if (location.proximity) {
+    return context.app.service('devices').find({ query: { $limit: 1, deviceUuid: location.deviceUuid } }).then(devices => {
+      const device = devices.data ? devices.data[0] : devices[0];
+      if (location.proximity.beacon.uuid == device.beaconValues[0] &&
+        location.proximity.beacon.major == device.beaconValues[1] &&
+        location.proximity.beacon.minor == device.beaconValues[2]) {
+        context.result = [];
+        context.SKIP = true;
+      }
+      return context;
+    });
+  } else { return context; }
 }
 
 function updateProxemics(context) {
+  if (context.SKIP) { return context; }
+
   if (context.type !== 'after') { throw new GeneralError('This must be run as an \'after\' hook.') }
+
   if (context.method !== 'create' && context.method !== 'patch' && context.method !== 'update' && context.method !== 'remove') {
     return context;
   }
@@ -63,32 +77,13 @@ function updateProxemics(context) {
   const orientationDifference = (o1, o2) => (o2 - o1 + 540) % 360 - 180;
 
   const getCloseDeviceUuids = locationPositions => {
-    //const radToDeg = v => v * 180 / Math.PI;
-    //const angleBetweenVectors = (v1, v2) => Math.acos(dot(v1, v2) / (norm(v1) * norm(v2)));
     if (locationPositions && locationPositions.length >= 2) {
       const locationPairs = combinations(locationPositions.data ? locationPositions.data : locationPositions, 2, 2);
       const currDeviceUuids = new Set();
       locationPairs.forEach(([l1, l2]) => {
-        if (!_.isNil(l1.position.x) && !_.isNil(l1.position.y) && !_.isNil(l2.position.x) && !_.isNil(l2.position.y) &&
-          _.isArray(l1.position.headingVector) && _.isArray(l2.position.headingVector)) {
+        if (!_.isNil(l1.position.x) && !_.isNil(l1.position.y) && !_.isNil(l2.position.x) && !_.isNil(l2.position.y)) {
           const distance = euclidean([l1.position.x, l1.position.y], [l2.position.x, l2.position.y]);
           const orientationDiff = Math.abs(orientationDifference(l1.position.orientation, l2.position.orientation))
-          // //const angleBetweenHeadings = radToDeg(angleBetweenVectors(l1.position.headingVector, l2.position.headingVector));
-          // //const L1L2Vec = [l2.position.x - l1.position.x, l2.position.y - l1.position.y];
-          // //const L2L1Vec = [l1.position.x - l2.position.x, l1.position.y - l2.position.y];
-          // //const viewAngleL1 = radToDeg(angleBetweenVectors(l1.position.headingVector, L1L2Vec));
-          // //const viewAngleL2 = radToDeg(angleBetweenVectors(l2.position.headingVector, L2L1Vec));
-          // console.log('--------------------------------------------------------------------------------')
-          // console.log('L1:', util.inspect(l1, false, null, true));
-          // console.log('L2:', util.inspect(l2, false, null, true));
-          // console.log(
-          //   'Distance:', distance,
-          //   'Orientation Difference:', orientationDiff,
-          //   //'Angle Between Headings:', angleBetweenHeadings
-          // );
-          // //console.log('L1L2:', L1L2Vec, 'L2L1:', L2L1Vec);
-          // //console.log('View Angle L1:', viewAngleL1, 'L2:', viewAngleL2);
-          // console.log('--------------------------------------------------------------------------------')
           if (distance < context.app.get('locations').proximityDistanceThreshold
             && orientationDiff < context.app.get('locations').viewAngleThreshold) {
             currDeviceUuids.add(l1.deviceUuid); currDeviceUuids.add(l2.deviceUuid);
@@ -102,12 +97,14 @@ function updateProxemics(context) {
   const proximityUpdate = (l, ignoreAbsolutePositions = false) => {
     const now = new Date().getTime();
     let scanningDevice, detectedDevice, currUser;
+    let closeBeaconValues = [];
     return new Promise((resolve, reject) => {
       Promise.all([
-        context.app.service('devices').find({ query: { $limit: 1, deviceUuid: l.deviceUuid } }),
+        context.app.service('devices').find({ query: { $limit: 1, $populate: 'user', deviceUuid: l.deviceUuid } }),
         context.app.service('devices').find({
           query: {
-            $limit: 1, beaconValues: [
+            $limit: 1, $populate: 'user',
+            beaconValues: [
               l.proximity.beacon.uuid.toLowerCase(),
               l.proximity.beacon.major,
               l.proximity.beacon.minor
@@ -117,52 +114,73 @@ function updateProxemics(context) {
       ]).then(devices => {
         scanningDevice = (devices[0].data ? devices[0].data : devices[0])[0];
         detectedDevice = (devices[1].data ? devices[1].data : devices[1])[0];
-        if (scanningDevice && scanningDevice.user
-          /* && detectedDevice && scanningDevice.user.equals(detectedDevice.user) && !scanningDevice._id.equals(detectedDevice._id) */) {
+        if (scanningDevice && scanningDevice.user && detectedDevice) {
           currUser = scanningDevice.user;
+          return context.app.service('locations').find({
+            query: {
+              username: currUser.email,
+              proximity: { $exists: true },
+              /*
+              'proximity.beacon.uuid': l.proximity.beacon.uuid,
+              'proximity.beacon.major': l.proximity.beacon.major,
+              'proximity.beacon.minor': l.proximity.beacon.minor,
+              */
+              updatedAt: { $gt: now - context.app.get('locations').maxInactivityTime }
+            }
+          })
+        }
+      }).then(result => {
+        if (result) {
+          const proximityLocations = result.data ? result.data : result;
+          proximityLocations.forEach(pl => {
+            const orientationLocations = proximityLocations.filter(ol => ol !== pl);
+            if (pl.proximity.distance < context.app.get('locations').proximityDistanceThreshold &&
+              (orientationLocations.length === 0 || orientationLocations.some(ol => {
+                const orientationDiff = Math.abs(orientationDifference(pl.proximity.orientation, ol.proximity.orientation));
+                //console.log('--- Orientation Difference ---:', orientationDiff);
+                return orientationDiff < context.app.get('locations').viewAngleThreshold;
+              }))
+            ) {
+              const beaconValues = [
+                pl.proximity.beacon.uuid.toLowerCase(),
+                pl.proximity.beacon.major,
+                pl.proximity.beacon.minor
+              ]
+              closeBeaconValues.push(beaconValues)
+            }
+          });
+          closeBeaconValues = _.uniqWith(closeBeaconValues, _.isEqual)
           return Promise.all([
-            context.app.service('proxemics').find({ query: { $limit: 1, user: currUser } }),
-            context.app.service('locations').find({
+            context.app.service('proxemics').find({ query: { $limit: 1, user: currUser._id } }),
+            closeBeaconValues.length ?
+              context.app.service('devices').find({ query: { $or: closeBeaconValues.length ? closeBeaconValues.map(beaconValues => { return { beaconValues }; }) : [] } }) :
+              Promise.resolve([]),
+            ignoreAbsolutePositions ? Promise.resolve([]) : context.app.service('locations').find({
               query: {
-                'proximity.beacon.uuid': l.proximity.beacon.uuid,
-                'proximity.beacon.major': l.proximity.beacon.major,
-                'proximity.beacon.minor': l.proximity.beacon.minor,
+                username: currUser.email,
+                position: { $exists: true },
                 updatedAt: { $gt: now - context.app.get('locations').maxInactivityTime }
               }
-            }),
-            ignoreAbsolutePositions ? Promise.resolve([]) :
-              context.app.service('locations').find({
-                query: {
-                  username: currUser.email,
-                  position: { $exists: true },
-                  updatedAt: { $gt: now - context.app.get('locations').maxInactivityTime }
-                }
-              })
+            })
           ]);
         }
       }).then(result => {
-        if (result && result[0] && result[1]) {
+        if (result) {
           const currentProxemics = (result[0].data ? result[0].data : result[0])[0];
-          const proximityLocations = result[1].data ? result[1].data : result[1];
+          const devices = result[1].data ? result[1].data : result[1];
 
           const proxemics = {
             user: currentProxemics ? currentProxemics.user : currUser || currUser,
-            state: currentProxemics ? _.cloneDeep(currentProxemics.state) : {} || {}
-          }
-
-          if (detectedDevice) {
-            if (proximityLocations.length && proximityLocations.every(cl => cl.proximity.distance < context.app.get('locations').proximityDistanceThreshold)) {
-              proxemics.state[detectedDevice.deviceUuid] = detectedDevice.capabilities;
-            } else { delete proxemics.state[detectedDevice.deviceUuid]; }
+            state: devices.reduce((out, device) => Object.assign(out, { [device.deviceUuid]: device.capabilities }), {})
           }
 
           if (!ignoreAbsolutePositions) {
             const absolutePositionLocations = result[2].data ? result[2].data : result[2];
             const currDeviceUuids = getCloseDeviceUuids(absolutePositionLocations);
             for (const deviceUuid in proxemics.state) {
-              if (!currDeviceUuids.find(dUuid => dUuid === deviceUuid)) {
-                delete proxemics.state[deviceUuid];
-              }
+              if (absolutePositionLocations.find(al => (al.data ? al.data : al).deviceUuid === deviceUuid)
+                && !currDeviceUuids.find(dUuid => dUuid === deviceUuid)
+              ) { delete proxemics.state[deviceUuid]; }
             }
           }
 
@@ -170,6 +188,7 @@ function updateProxemics(context) {
             return context.app.service('proxemics').patch(null, proxemics, { query: { user: proxemics.user } })
           }
         }
+
       }).then(() => { resolve(true); }).catch(e => reject(e));
     });
   }
@@ -238,9 +257,9 @@ module.exports = {
     all: [authenticate('jwt', 'yanux'), clearInactive],
     find: [],
     get: [],
-    create: [],
-    update: [beforePatchUpdate, mongooseOptions({ upsert: true })],
-    patch: [beforePatchUpdate, mongooseOptions({ upsert: true })],
+    create: [skipSelfScan],
+    update: [skipSelfScan, mongooseOptions({ upsert: true })],
+    patch: [skipSelfScan, mongooseOptions({ upsert: true })],
     remove: []
   },
 

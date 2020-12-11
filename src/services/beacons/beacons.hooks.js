@@ -17,67 +17,6 @@ function clearInactive(context) {
   } else { return context; }
 }
 
-function logBeacons(context) {
-  if (context.result) {
-    let results;
-    if (_.isArray(context.result) || _.isArray(context.result.data)) {
-      results = context.result.data ? context.result.data : context.result
-    } else {
-      results = [context.result]
-    }
-    let promises = [];
-    results.forEach(result => {
-      const data = _.clone(result)
-      data._id = null;
-      data.createdAt = null;
-      data.updatedAt = null;
-      data.method = context.method;
-      promises.push(context.app.service('beacon-logs').create(data));
-    });
-    return Promise.all(promises).then(() => context)
-  } else return context;
-}
-
-//TODO: This hook should no longer be necessary since we moved to use "PATCH + upsert" instead of CREATE.
-function beforeCreate(context) {
-  if (context.params.user && context.data.beaconKey && context.data.deviceUuid) {
-    const user = context.params.user;
-    const beaconkey = context.data.beaconKey;
-    const deviceUuid = context.data.deviceUuid;
-    return context.service.remove(null, {
-      query: {
-        user: user._id,
-        deviceUuid: deviceUuid,
-        beaconKey: beaconkey
-      }
-    }).then(() => context).catch(e => { throw e; });
-  }
-}
-
-//TODO: This hook can probably be simplified since we added upsert support to UPDATE and PATCH.
-function beforePatchUpdate(context) {
-  if (context.data && context.data.beacon && context.params.query) {
-    const beacon = context.data.beacon;
-    const query = context.params.query;
-    return context.service.find({ query: query, paginate: false })
-      .then(beacons => {
-        if (!beacons.length) {
-          context.service.create({
-            user: context.data.user || context.params.query.user,
-            deviceUuid: context.data.deviceUuid || context.params.query.deviceUuid,
-            beaconKey: context.data.beaconKey || context.params.query.beaconKey,
-            beacon: beacon
-          }).then(data => {
-            context.result = [data];
-            return context;
-          }).catch(e => { throw e; });
-        } else if (beacons.every(b => beacon.timestamp >= b.beacon.timestamp)) {
-          return context;
-        } else { throw new GeneralError('The new beacon\'s timestamp is older than the one(s) already stored.'); }
-      }).catch(e => { throw e; });
-  }
-}
-
 function updateProxemics(context) {
   if (context.type !== 'after') { throw new GeneralError('This must be run as an \'after\' hook.') }
   if (context.method !== 'create' && context.method !== 'patch' && context.method !== 'update' && context.method !== 'remove') {
@@ -161,19 +100,19 @@ module.exports = {
     all: [authenticate('jwt', 'yanux'), clearInactive],
     find: [],
     get: [],
-    create: [canWriteEntity, beforeCreate],
-    update: [canWriteEntity, beforePatchUpdate, mongooseOptions({ upsert: true })],
-    patch: [canWriteEntity, beforePatchUpdate, mongooseOptions({ upsert: true })],
+    create: [canWriteEntity],
+    update: [canWriteEntity, mongooseOptions({ upsert: true })],
+    patch: [canWriteEntity, mongooseOptions({ upsert: true })],
     remove: [canWriteEntity]
   },
   after: {
     all: [],
     find: [canReadEntity],
     get: [canReadEntity],
-    create: [/* logBeacons, */ updateProxemics],
-    update: [/* logBeacons, */ updateProxemics],
-    patch: [/* logBeacons, */ updateProxemics],
-    remove: [/* logBeacons, */ updateProxemics]
+    create: [updateProxemics],
+    update: [updateProxemics],
+    patch: [updateProxemics],
+    remove: [updateProxemics]
   },
   error: {
     all: [],

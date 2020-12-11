@@ -18,6 +18,7 @@ module.exports = function (app) {
   const ProximitySchema = new Schema({
     beacon: { type: BeaconSchema, required: true },
     distance: { type: Number, required: true },
+    orientation: { type: Number, required: true },
     zone: { type: String, required: false }
   }, { _id: false });
 
@@ -26,7 +27,7 @@ module.exports = function (app) {
     x: { type: Number, required: true },
     y: { type: Number, required: true },
     orientation: { type: Number, required: true },
-    headingVector: { type: [Number], required: false },
+    /* headingVector: { type: [Number], required: false }, */
     zone: { type: String, required: false }
   }, { _id: false });
 

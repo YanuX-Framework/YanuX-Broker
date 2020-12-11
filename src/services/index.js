@@ -7,7 +7,6 @@ const beacons = require('./beacons/beacons.service.js');
 const instances = require('./instances/instances.service.js');
 const devices = require('./devices/devices.service.js');
 const proxemics = require('./proxemics/proxemics.service.js');
-const beaconLogs = require('./beacon-logs/beacon-logs.service.js');
 const locations = require('./locations/locations.service.js');
 
 // eslint-disable-next-line no-unused-vars
@@ -21,6 +20,5 @@ module.exports = function (app) {
   app.configure(instances);
   app.configure(devices);
   app.configure(proxemics);
-  app.configure(beaconLogs);
   app.configure(locations);
 };
