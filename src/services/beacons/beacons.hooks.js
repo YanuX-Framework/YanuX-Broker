@@ -41,6 +41,7 @@ function updateProxemics(context) {
     return context;
   }
 
+  //TODO: [UPDATE LEGACY PROXIMITY POSITIONING]
   const proximityUpdate = b => {
     return new Promise((resolve, reject) => {
       let scanningDevice, detectedDevice, currUser;
@@ -58,11 +59,12 @@ function updateProxemics(context) {
           //TODO:
           //Not sure if currUser should be scanningDevice.user or detectedDevice.user. 
           //The former makes more sense, but from experience I feel that the latter is somewhat more consistent.
-          currUser = detectedDevice.user;
+          currUser = scanningDevice.user;
           return Promise.all([
             context.app.service('proxemics').find({ query: { $limit: 1, user: currUser } }),
             context.app.service('beacons').find({
               query: {
+                user: currUser,
                 //TODO: Had to do the comparison this way, Feathers and/or Mongoose refuse to match the array directly. 
                 ...detectedDevice.beaconValues.reduce((out, curr, i) => Object.assign(out, { ['beacon.values.' + i]: curr }, {})),
                 updatedAt: { $gt: new Date().getTime() - context.app.get('beacons').maxInactivityTime }

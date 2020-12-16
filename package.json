@@ -56,7 +56,7 @@
     "ml-distance-euclidean": "^2.0.0",
     "mongodb": "^3.6.3",
     "mongodb-core": "^3.2.7",
-    "mongoose": "^5.11.7",
+    "mongoose": "^5.11.8",
     "nodemon": "^2.0.6",
     "passport-custom": "^1.1.1",
     "request": "^2.88.2",
@@ -67,7 +67,7 @@
     "ws": "^7.4.1"
   },
   "devDependencies": {
-    "ajv": "^6.12.6",
+    "ajv": "^7.0.0",
     "eslint": "^7.15.0",
     "mocha": "^8.2.1"
   }

@@ -1,13 +1,10 @@
-const util = require('util');
-
 const { authenticate } = require('@feathersjs/authentication').hooks;
 const { GeneralError } = require('@feathersjs/errors');
-
-const feather = require('@feathersjs/feathers')
-
 const _ = require('lodash');
-const combinations = require('combinations');
-const { euclidean } = require('ml-distance-euclidean');
+
+//TODO: [UPDATE ABSOLUTE POSITIONING]
+//const combinations = require('combinations');
+//const { euclidean } = require('ml-distance-euclidean');
 
 const mongooseOptions = require('../../hooks/mongoose-options');
 
@@ -43,7 +40,7 @@ function skipSelfScan(context) {
   } else { return context; }
 }
 
-function updateProxemics(context) {
+function updateProxemics(context, user) {
   if (context.SKIP) { return context; }
 
   if (context.type !== 'after') { throw new GeneralError('This must be run as an \'after\' hook.') }
@@ -76,6 +73,8 @@ function updateProxemics(context) {
 
   const orientationDifference = (o1, o2) => (o2 - o1 + 540) % 360 - 180;
 
+  //TODO: [UPDATE ABSOLUTE POSITIONING] Code currently disabled because it has not been properly tested/updated.
+  /*
   const getCloseDeviceUuids = locationPositions => {
     if (locationPositions && locationPositions.length >= 2) {
       const locationPairs = combinations(locationPositions.data ? locationPositions.data : locationPositions, 2, 2);
@@ -93,10 +92,14 @@ function updateProxemics(context) {
       return Array.from(currDeviceUuids);
     } else { return []; }
   }
+  */
 
-  const proximityUpdate = (l, ignoreAbsolutePositions = false) => {
+  const proximityUpdate = (l
+    //TODO: [UPDATE ABSOLUTE POSITIONING]
+    /*, ignoreAbsolutePositions = false*/
+  ) => {
     const now = new Date().getTime();
-    let scanningDevice, detectedDevice, currUser;
+    let scanningDevice, detectedDevice, currUser, currProxemics;
     let closeBeaconValues = [];
     return new Promise((resolve, reject) => {
       Promise.all([
@@ -104,11 +107,7 @@ function updateProxemics(context) {
         context.app.service('devices').find({
           query: {
             $limit: 1, $populate: 'user',
-            beaconValues: [
-              l.proximity.beacon.uuid.toLowerCase(),
-              l.proximity.beacon.major,
-              l.proximity.beacon.minor
-            ]
+            beaconValues: [l.proximity.beacon.uuid.toLowerCase(), l.proximity.beacon.major, l.proximity.beacon.minor]
           }
         })
       ]).then(devices => {
@@ -116,15 +115,22 @@ function updateProxemics(context) {
         detectedDevice = (devices[1].data ? devices[1].data : devices[1])[0];
         if (scanningDevice && scanningDevice.user && detectedDevice) {
           currUser = scanningDevice.user;
+          return context.app.service('proxemics').find({ query: { $limit: 1, user: currUser._id } });
+        }
+      }).then(proxemics => {
+        if (proxemics) {
+          currProxemics = (proxemics.data ? proxemics.data : proxemics)[0];
+          if (currProxemics && currProxemics.sharedWith && currProxemics.sharedWith.length) {
+            return context.app.service('users').find({ query: { $or: currProxemics.sharedWith.map(u => ({ _id: u })) } });
+          } else { return [] }
+        }
+      }).then(sharedWithUsers => {
+        if (sharedWithUsers) {
+          const users = sharedWithUsers.data ? sharedWithUsers.data : sharedWithUsers;
           return context.app.service('locations').find({
             query: {
-              username: currUser.email,
+              $or: [{ username: currUser.email }, ...users.map(u => ({ username: u.email }))],
               proximity: { $exists: true },
-              /*
-              'proximity.beacon.uuid': l.proximity.beacon.uuid,
-              'proximity.beacon.major': l.proximity.beacon.major,
-              'proximity.beacon.minor': l.proximity.beacon.minor,
-              */
               updatedAt: { $gt: now - context.app.get('locations').maxInactivityTime }
             }
           })
@@ -133,47 +139,59 @@ function updateProxemics(context) {
         if (result) {
           const proximityLocations = result.data ? result.data : result;
           proximityLocations.forEach(pl => {
-            const orientationLocations = proximityLocations.filter(ol => ol !== pl);
+            const orientationLocations = proximityLocations.filter(ol => ol.deviceUuid !== pl.deviceUuid);
             if (pl.proximity.distance < context.app.get('locations').proximityDistanceThreshold &&
               (orientationLocations.length === 0 || orientationLocations.some(ol => {
                 const orientationDiff = Math.abs(orientationDifference(pl.proximity.orientation, ol.proximity.orientation));
-                //console.log('--- Orientation Difference ---:', orientationDiff);
                 return orientationDiff < context.app.get('locations').viewAngleThreshold;
-              }))
-            ) {
-              const beaconValues = [
-                pl.proximity.beacon.uuid.toLowerCase(),
-                pl.proximity.beacon.major,
-                pl.proximity.beacon.minor
-              ]
-              closeBeaconValues.push(beaconValues)
-            }
+              }))) { closeBeaconValues.push([pl.proximity.beacon.uuid.toLowerCase(), pl.proximity.beacon.major, pl.proximity.beacon.minor]) }
           });
           closeBeaconValues = _.uniqWith(closeBeaconValues, _.isEqual)
-          return Promise.all([
-            context.app.service('proxemics').find({ query: { $limit: 1, user: currUser._id } }),
-            closeBeaconValues.length ?
-              context.app.service('devices').find({ query: { $or: closeBeaconValues.length ? closeBeaconValues.map(beaconValues => { return { beaconValues }; }) : [] } }) :
-              Promise.resolve([]),
-            ignoreAbsolutePositions ? Promise.resolve([]) : context.app.service('locations').find({
-              query: {
-                username: currUser.email,
-                position: { $exists: true },
-                updatedAt: { $gt: now - context.app.get('locations').maxInactivityTime }
-              }
-            })
-          ]);
+          return closeBeaconValues.length ?
+            context.app.service('devices').find({ query: { $or: closeBeaconValues.length ? closeBeaconValues.map(beaconValues => { return { beaconValues }; }) : [] } }) :
+            Promise.resolve([]);
         }
       }).then(result => {
         if (result) {
-          const currentProxemics = (result[0].data ? result[0].data : result[0])[0];
-          const devices = result[1].data ? result[1].data : result[1];
-
+          const devices = result.data ? result.data : result;
           const proxemics = {
-            user: currentProxemics ? currentProxemics.user : currUser || currUser,
+            user: currProxemics ? currProxemics.user : currUser || currUser,
             state: devices.reduce((out, device) => Object.assign(out, { [device.deviceUuid]: device.capabilities }), {})
           }
-
+          return Promise.all([
+            proxemics, _.isEmpty(proxemics.state) ? [] :
+              context.app.service('locations').Model.aggregate([
+                { $match: { $or: Object.keys(proxemics.state).map(deviceUuid => { return { deviceUuid }; }) } },
+                {
+                  $project: {
+                    deviceUuid: '$deviceUuid',
+                    orientation: { $ifNull: ["$position.orientation", "$proximity.orientation"] },
+                    updatedAt: '$updatedAt'
+                  }
+                },
+                { $sort: { "updatedAt": 1 } },
+                { $group: { _id: "$deviceUuid", orientation: { $last: "$orientation" } } }
+              ]),
+            //TODO: [UPDATE ABSOLUTE POSITIONING] Code disabled because it is not in use. Moreover, it is not taking into account if locations belong to the same place/room!
+            //An aggregation query would probably be needed for that.
+            /*
+            ignoreAbsolutePositions ? Promise.resolve([]) : context.app.service('locations').find({
+              query: {
+                username: currUser.email, position: { $exists: true },
+                updatedAt: { $gt: now - context.app.get('locations').maxInactivityTime }
+              }
+            })
+            */
+          ])
+        }
+      }).then(result => {
+        if (result) {
+          const [proxemics, orientation] = result;
+          orientation.forEach(o => {
+            if (proxemics.state[o._id]) { proxemics.state[o._id]._orientation = o.orientation; }
+          });
+          //TODO: [UPDATE ABSOLUTE POSITIONING] Code currently disabled because it has not been properly tested/updated.
+          /*
           if (!ignoreAbsolutePositions) {
             const absolutePositionLocations = result[2].data ? result[2].data : result[2];
             const currDeviceUuids = getCloseDeviceUuids(absolutePositionLocations);
@@ -183,16 +201,17 @@ function updateProxemics(context) {
               ) { delete proxemics.state[deviceUuid]; }
             }
           }
-
-          if (!currentProxemics || !_.isEqual(currentProxemics.state, proxemics.state)) {
+          */
+          if (!currProxemics || !_.isEqual(currProxemics.state, proxemics.state)) {
             return context.app.service('proxemics').patch(null, proxemics, { query: { user: proxemics.user } })
           }
         }
-
       }).then(() => { resolve(true); }).catch(e => reject(e));
     });
   }
 
+  //TODO: [UPDATE ABSOLUTE POSITIONING] Update the "positionUpdate" function to match the behaviour and improvements made to the "proximityUpdate" function.
+  /*
   const positionUpdate = l => {
     const now = new Date().getTime();
     let currDevice, currUser;
@@ -243,12 +262,18 @@ function updateProxemics(context) {
         }).then(() => { resolve(true); }).catch(e => reject(e));
     });
   }
+  */
 
-  return Promise.all(locations.map(l => {
-    if (l.proximity) { return proximityUpdate(l); }
-    else if (l.position) { return positionUpdate(l); }
-    else { throw new GeneralError('Something is wrong! A location should always have proximity or position information.') }
-  })).then(() => context).catch(e => { throw e });
+  if (user) {
+    //TODO: Make a version of this method that works based on a user/user Id/e-mail instead of location so that it can be called from other services if needed.
+  } else {
+    return Promise.all(locations.map(l => {
+      if (l.proximity) { return proximityUpdate(l); }
+      //TODO: [UPDATE ABSOLUTE POSITIONING] 
+      //else if (l.position) { return positionUpdate(l); }
+      else { throw new GeneralError('Location method currently not supported.') }
+    })).then(() => context).catch(e => { throw e });
+  }
 }
 
 
