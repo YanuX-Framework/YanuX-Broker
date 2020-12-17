@@ -73,6 +73,7 @@ function updateProxemics(context, user) {
 
   const orientationDifference = (o1, o2) => (o2 - o1 + 540) % 360 - 180;
 
+  // --------------------------------------------------------------------------------
   //TODO: [UPDATE ABSOLUTE POSITIONING] Code currently disabled because it has not been properly tested/updated.
   /*
   const getCloseDeviceUuids = locationPositions => {
@@ -93,11 +94,9 @@ function updateProxemics(context, user) {
     } else { return []; }
   }
   */
+  // --------------------------------------------------------------------------------
 
-  const proximityUpdate = (l
-    //TODO: [UPDATE ABSOLUTE POSITIONING]
-    /*, ignoreAbsolutePositions = false*/
-  ) => {
+  const proximityUpdate = (l /* TODO: [UPDATE ABSOLUTE POSITIONING] =>*//*, ignoreAbsolutePositions = false*/) => {
     const now = new Date().getTime();
     let scanningDevice, detectedDevice, currUser, currProxemics;
     let closeBeaconValues = [];
@@ -155,11 +154,14 @@ function updateProxemics(context, user) {
         if (result) {
           const devices = result.data ? result.data : result;
           const proxemics = {
-            user: currProxemics ? currProxemics.user : currUser || currUser,
+            //user: currProxemics ? currProxemics.user : currUser || currUser,
             state: devices.reduce((out, device) => Object.assign(out, { [device.deviceUuid]: device.capabilities }), {})
           }
           return Promise.all([
-            proxemics, _.isEmpty(proxemics.state) ? [] :
+            proxemics
+            // --------------------------------------------------------------------------------
+            //TODO: With the "new" "sharedWith" integration, this may no longer be requirement for "proxemics.find" middleware.
+            /*,_.isEmpty(proxemics.state) ? [] :
               context.app.service('locations').Model.aggregate([
                 { $match: { $or: Object.keys(proxemics.state).map(deviceUuid => { return { deviceUuid }; }) } },
                 {
@@ -172,6 +174,7 @@ function updateProxemics(context, user) {
                 { $sort: { "updatedAt": 1 } },
                 { $group: { _id: "$deviceUuid", orientation: { $last: "$orientation" } } }
               ]),
+              */
             //TODO: [UPDATE ABSOLUTE POSITIONING] Code disabled because it is not in use. Moreover, it is not taking into account if locations belong to the same place/room!
             //An aggregation query would probably be needed for that.
             /*
@@ -182,14 +185,16 @@ function updateProxemics(context, user) {
               }
             })
             */
+            // --------------------------------------------------------------------------------
           ])
         }
       }).then(result => {
         if (result) {
-          const [proxemics, orientation] = result;
-          orientation.forEach(o => {
-            if (proxemics.state[o._id]) { proxemics.state[o._id]._orientation = o.orientation; }
-          });
+          const [proxemics/*, orientation*/] = result;
+          // --------------------------------------------------------------------------------
+          //TODO: With the "new" "sharedWith" integration, this may no longer be requirement for "proxemics.find" middleware.
+          //In fact, it may be possible to just get a single proxemics from YanuX Coordinator instead of many and then merging them.
+          //orientation.forEach(o => { if (proxemics.state[o._id]) { proxemics.state[o._id]._orientation = o.orientation; } });
           //TODO: [UPDATE ABSOLUTE POSITIONING] Code currently disabled because it has not been properly tested/updated.
           /*
           if (!ignoreAbsolutePositions) {
@@ -202,8 +207,13 @@ function updateProxemics(context, user) {
             }
           }
           */
+          // --------------------------------------------------------------------------------
           if (!currProxemics || !_.isEqual(currProxemics.state, proxemics.state)) {
-            return context.app.service('proxemics').patch(null, proxemics, { query: { user: proxemics.user } })
+            const sharedWith = currProxemics.sharedWith ? currProxemics.sharedWith : []
+            return context.app.service('proxemics').patch(null, proxemics, {
+              //query: { user: proxemics.user }
+              query: { $or: [{ user: proxemics.user }, ...sharedWith.map(u => ({ user: u })), { sharedWith: { $in: [proxemics.user, ...sharedWith] } }] }
+            })
           }
         }
       }).then(() => { resolve(true); }).catch(e => reject(e));
