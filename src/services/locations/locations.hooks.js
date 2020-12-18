@@ -2,9 +2,13 @@ const { authenticate } = require('@feathersjs/authentication').hooks;
 const { GeneralError } = require('@feathersjs/errors');
 const _ = require('lodash');
 
+// --------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
 //TODO: [UPDATE ABSOLUTE POSITIONING]
 //const combinations = require('combinations');
 //const { euclidean } = require('ml-distance-euclidean');
+// --------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
 
 const mongooseOptions = require('../../hooks/mongoose-options');
 
@@ -120,7 +124,7 @@ function updateProxemics(context/*, user*/) {
           }
         }).then(result => {
           if (result) {
-            const users = [currUser._id, ...(result.data ? result.data : result)];
+            const users = [currUser._id, ...result.data ? result.data : result];
             return context.app.service('devices').find({ query: { user: { $in: users } } });
           }
         }).then(result => {
@@ -144,7 +148,7 @@ function updateProxemics(context/*, user*/) {
                   return orientationDiff < context.app.get('locations').viewAngleThreshold;
                 }))) { closeBeaconValues.push([pl.proximity.beacon.uuid.toLowerCase(), pl.proximity.beacon.major, pl.proximity.beacon.minor]) }
             });
-            closeBeaconValues = _.uniqWith(closeBeaconValues, _.isEqual)
+            closeBeaconValues = _.uniqWith(closeBeaconValues, _.isEqual);
             return closeBeaconValues.length ?
               context.app.service('devices').find({ query: { beaconValues: { $in: closeBeaconValues } } }) :
               Promise.resolve([]);
@@ -153,10 +157,13 @@ function updateProxemics(context/*, user*/) {
           if (result) {
             const devices = result.data ? result.data : result;
             const proxemics = { state: devices.reduce((out, device) => Object.assign(out, { [device.deviceUuid]: device.capabilities }), {}) }
-            if (!currProxemics || !_.isEqual(currProxemics.state, proxemics.state)) {
-              const users = _.uniq([currUser._id, ...(currProxemics && currProxemics.sharedWith ? currProxemics.sharedWith : [])]);
-              return Promise.all(users.map(u => context.app.service('proxemics').patch(null, proxemics, { query: { user: u } })));
-            }
+            // --------------------------------------------------------------------------------
+            /* if (!currProxemics || !_.isEqual(currProxemics.state, proxemics.state)) { */
+            // --------------------------------------------------------------------------------
+            const users = _.uniq([currUser._id.toString(), ...currProxemics && currProxemics.sharedWith ? currProxemics.sharedWith.map(u => u.toString()) : []]);
+            return Promise.all(users.map(u => context.app.service('proxemics').patch(null, proxemics, { query: { user: u } })));
+            // --------------------------------------------------------------------------------
+            /* } */
             // --------------------------------------------------------------------------------
             // --------------------------------------------------------------------------------
             /*
