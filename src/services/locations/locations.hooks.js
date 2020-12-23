@@ -2,10 +2,10 @@ const { authenticate } = require('@feathersjs/authentication').hooks;
 const { GeneralError } = require('@feathersjs/errors');
 const _ = require('lodash');
 
+const combinations = require('combinations');
 // --------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------
 //TODO: [UPDATE ABSOLUTE POSITIONING]
-//const combinations = require('combinations');
 //const { euclidean } = require('ml-distance-euclidean');
 // --------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------
@@ -105,8 +105,7 @@ function updateProxemics(context/*, user*/) {
 
   const proximityUpdate = (l /* TODO: [UPDATE ABSOLUTE POSITIONING] =>*//*, ignoreAbsolutePositions = false*/) => {
     const now = new Date().getTime();
-    let scanningDevice, currUser, currProxemics;
-    let closeBeaconValues = [];
+    let scanningDevice, currUser, currProxemics, closeDevices;
     return new Promise((resolve, reject) => {
       context.app.service('devices').find({ query: { $limit: 1, $populate: 'user', deviceUuid: l.deviceUuid } })
         .then(devices => {
@@ -140,13 +139,11 @@ function updateProxemics(context/*, user*/) {
         }).then(result => {
           if (result) {
             const proximityLocations = result.data ? result.data : result;
+            let closeBeaconValues = [];
             proximityLocations.forEach(pl => {
-              const orientationLocations = proximityLocations.filter(ol => ol.deviceUuid !== pl.deviceUuid);
-              if (pl.proximity.distance < context.app.get('locations').proximityDistanceThreshold &&
-                (orientationLocations.length === 0 || orientationLocations.some(ol => {
-                  const orientationDiff = Math.abs(orientationDifference(pl.proximity.orientation, ol.proximity.orientation));
-                  return orientationDiff < context.app.get('locations').viewAngleThreshold;
-                }))) { closeBeaconValues.push([pl.proximity.beacon.uuid.toLowerCase(), pl.proximity.beacon.major, pl.proximity.beacon.minor]) }
+              if (pl.proximity.distance < context.app.get('locations').proximityDistanceThreshold) {
+                closeBeaconValues.push([pl.proximity.beacon.uuid.toLowerCase(), pl.proximity.beacon.major, pl.proximity.beacon.minor])
+              }
             });
             closeBeaconValues = _.uniqWith(closeBeaconValues, _.isEqual);
             return closeBeaconValues.length ?
@@ -155,37 +152,38 @@ function updateProxemics(context/*, user*/) {
           }
         }).then(result => {
           if (result) {
-            const devices = result.data ? result.data : result;
+            closeDevices = (result.data ? result.data : result).reduce((out, device) => Object.assign(out, { [device.deviceUuid]: device }), {});
+            return context.app.service('locations').Model.aggregate([
+              { $match: { deviceUuid: { $in: Object.values(closeDevices).map(d => d.deviceUuid) } } }, {
+                $project: {
+                  deviceUuid: "$deviceUuid",
+                  orientation: { $ifNull: ["$position.orientation", "$proximity.orientation"] },
+                  updatedAt: "$updatedAt"
+                }
+              }, { $sort: { updatedAt: 1 } }, { $group: { _id: "$deviceUuid", orientation: { $last: "$orientation" } } }
+            ])
+          }
+        }).then(deviceOrientations => {
+          const devices = [];
+          if (deviceOrientations) {
+            if (deviceOrientations.length == 1) {
+              devices.push(closeDevices.find(cd => cd.deviceUuid === deviceOrientations[0]._id));
+            } else if (deviceOrientations.length >= 2) {
+              const deviceOrientationPairs = combinations(deviceOrientations, 2, 2);
+              deviceOrientationPairs.forEach(([do1, do2]) => {
+                const orientationDiff = Math.abs(orientationDifference(do1.orientation, do2.orientation));
+                if (orientationDiff < context.app.get('locations').viewAngleThreshold) {
+                  devices.push(closeDevices[do1._id], closeDevices[do2._id]);
+                }
+              });
+            }
             const proxemics = { state: devices.reduce((out, device) => Object.assign(out, { [device.deviceUuid]: device.capabilities }), {}) }
-            // --------------------------------------------------------------------------------
-            /* if (!currProxemics || !_.isEqual(currProxemics.state, proxemics.state)) { */
-            // --------------------------------------------------------------------------------
             const users = _.uniq([currUser._id.toString(), ...currProxemics && currProxemics.sharedWith ? currProxemics.sharedWith.map(u => u.toString()) : []]);
             return Promise.all(users.map(u => context.app.service('proxemics').patch(null, proxemics, { query: { user: u } })));
-            // --------------------------------------------------------------------------------
-            /* } */
             // --------------------------------------------------------------------------------
             // --------------------------------------------------------------------------------
             /*
             return Promise.all([proxemics,
-              // --------------------------------------------------------------------------------
-              //TODO: With the "new" "sharedWith" integration, this may no longer be requirement for "proxemics.find" middleware.
-              // --------------------------------------------------------------------------------
-              ,_.isEmpty(proxemics.state) ? [] :
-                context.app.service('locations').Model.aggregate([
-                  //TODO: Perhaps replace $or with $in
-                  { $match: { $or: Object.keys(proxemics.state).map(deviceUuid => { return { deviceUuid }; }) } },
-                  {
-                    $project: {
-                      deviceUuid: '$deviceUuid',
-                      orientation: { $ifNull: ["$position.orientation", "$proximity.orientation"] },
-                      updatedAt: '$updatedAt'
-                    }
-                  },
-                  { $sort: { "updatedAt": 1 } },
-                  { $group: { _id: "$deviceUuid", orientation: { $last: "$orientation" } } }
-                ]),
-                */
             // --------------------------------------------------------------------------------
             //TODO: [UPDATE ABSOLUTE POSITIONING] Code disabled because it is not in use. Moreover, it is not taking into account if locations belong to the same place/room!
             //An aggregation query would probably be needed for that.
@@ -208,11 +206,6 @@ function updateProxemics(context/*, user*/) {
         /*.then(result => {
           if (result) {
             const [proxemics, orientation*] = result;
-            // --------------------------------------------------------------------------------
-            //TODO: With the "new" "sharedWith" integration, this may no longer be requirement for "proxemics.find" middleware.
-            //In fact, it may be possible to just get a single proxemics from YanuX Coordinator instead of many and then merging them.
-            // --------------------------------------------------------------------------------
-            //orientation.forEach(o => { if (proxemics.state[o._id]) { proxemics.state[o._id]._orientation = o.orientation; } });
             // --------------------------------------------------------------------------------
             //TODO: [UPDATE ABSOLUTE POSITIONING] Code currently disabled because it has not been properly tested/updated.
             // --------------------------------------------------------------------------------
