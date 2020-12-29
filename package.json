@@ -64,7 +64,7 @@
     "serve-favicon": "^2.5.0",
     "uuid": "^8.3.2",
     "winston": "^3.3.3",
-    "ws": "^7.4.1"
+    "ws": "^7.4.2"
   },
   "devDependencies": {
     "ajv": "^7.0.2",
