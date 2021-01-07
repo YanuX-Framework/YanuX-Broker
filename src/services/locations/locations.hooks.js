@@ -167,7 +167,7 @@ function updateProxemics(context/*, user*/) {
           const devices = [];
           if (deviceOrientations) {
             if (deviceOrientations.length == 1) {
-              devices.push(closeDevices.find(cd => cd.deviceUuid === deviceOrientations[0]._id));
+              devices.push(closeDevices[deviceOrientations[0]._id]);
             } else if (deviceOrientations.length >= 2) {
               const deviceOrientationPairs = combinations(deviceOrientations, 2, 2);
               deviceOrientationPairs.forEach(([do1, do2]) => {

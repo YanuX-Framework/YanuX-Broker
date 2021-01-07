@@ -50,6 +50,9 @@ app.configure(express.rest());
 
 // Socket.io
 app.configure(socketio(function (io) {
+    io.origins((_, callback) => {
+        callback(null, true);
+    });
     // Registering Socket.io middleware
     io.use(function (socket, next) {
         // Exposing the socket to services and hooks
