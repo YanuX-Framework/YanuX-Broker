@@ -177,9 +177,13 @@ function updateProxemics(context/*, user*/) {
                 }
               });
             }
+
             const proxemics = { state: devices.reduce((out, device) => Object.assign(out, { [device.deviceUuid]: device.capabilities }), {}) }
-            const users = _.uniq([currUser._id.toString(), ...currProxemics && currProxemics.sharedWith ? currProxemics.sharedWith.map(u => u.toString()) : []]);
-            return Promise.all(users.map(u => context.app.service('proxemics').patch(null, proxemics, { query: { user: u } })));
+            if (!_.isEqual(currProxemics.state, proxemics.state)) {
+              const users = _.uniq([currUser._id.toString(), ...currProxemics && currProxemics.sharedWith ? currProxemics.sharedWith.map(u => u.toString()) : []]);
+              return Promise.all(users.map(u => context.app.service('proxemics').patch(null, proxemics, { query: { user: u } })));
+            } else { return Promise.resolve([]) }
+
             // --------------------------------------------------------------------------------
             // --------------------------------------------------------------------------------
             /*
