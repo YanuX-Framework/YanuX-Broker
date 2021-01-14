@@ -48,12 +48,22 @@ module.exports = function (app) {
     } else if (data && data.client && data.user) {
       const channels = [];
       channels.push(`users/${data.user._id}/clients/${data.client._id}`)
-      if (data.sharedWith) {
-        channels.push(...data.sharedWith.map(u => `users/${u._id}/clients/${data.client._id}`));
-      }
-      if(context.result && context.result.prevSharedWith) {
-        channels.push(...context.result.prevSharedWith.map(u => `users/${u._id}/clients/${data.client._id}`));
-      }
+      if (
+        //NOTE:
+        //Ignoring proxemics "sharedWith" to optimize performance. 
+        //According to the current way things are being done it is not required anyway.
+        //If things stay that way I should probably remove "sharedWith" from "proxemics".
+        //Instead I can lookup for the current user's "resource subscription", get the
+        //corresponding "resource" and get its "sharedWith" value when I need it (i.e.,
+        //the "location" update proxemics hook).
+        context.path !== 'proxemics' &&
+        data.sharedWith
+      ) { channels.push(...data.sharedWith.map(u => `users/${u._id}/clients/${data.client._id}`)); }
+      if (
+        //NOTE: The same as the previous note.
+        context.path !== 'proxemics' &&
+        context.result && context.result.prevSharedWith
+      ) { channels.push(...context.result.prevSharedWith.map(u => `users/${u._id}/clients/${data.client._id}`)); }
       channel = app.channel(...channels);
     } else if (data && data.client) {
       channel = app.channel(`clients/${data.client._id}`);

@@ -166,7 +166,7 @@ function updateProxemics(context/*, user*/) {
         }).then(deviceOrientations => {
           const devices = [];
           if (deviceOrientations) {
-            if (deviceOrientations.length == 1) {
+            if (deviceOrientations.length === 1) {
               devices.push(closeDevices[deviceOrientations[0]._id]);
             } else if (deviceOrientations.length >= 2) {
               const deviceOrientationPairs = combinations(deviceOrientations, 2, 2);
@@ -181,7 +181,8 @@ function updateProxemics(context/*, user*/) {
             const proxemics = { state: devices.reduce((out, device) => Object.assign(out, { [device.deviceUuid]: device.capabilities }), {}) }
             if (!_.isEqual(currProxemics.state, proxemics.state)) {
               const users = _.uniq([currUser._id.toString(), ...currProxemics && currProxemics.sharedWith ? currProxemics.sharedWith.map(u => u.toString()) : []]);
-              return Promise.all(users.map(u => context.app.service('proxemics').patch(null, proxemics, { query: { user: u } })));
+              //return Promise.all(users.map(u => context.app.service('proxemics').patch(null, proxemics, { query: { user: u } })));
+              return context.app.service('proxemics').patch(null, proxemics, { query: { user: { $in: users } } })
             } else { return Promise.resolve([]) }
 
             // --------------------------------------------------------------------------------
