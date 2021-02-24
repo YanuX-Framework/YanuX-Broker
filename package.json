@@ -46,17 +46,17 @@
     "debug": "^4.3.1",
     "dnssd": "^0.4.1",
     "feathers-authentication-hooks": "^1.0.2",
-    "feathers-hooks-common": "^5.0.4",
+    "feathers-hooks-common": "^5.0.5",
     "feathers-mongodb": "^6.3.0",
     "feathers-mongoose": "^8.3.1",
-    "helmet": "^4.3.1",
-    "jose": "^2.0.3",
-    "lodash": "^4.17.20",
-    "mathjs": "^8.1.1",
+    "helmet": "^4.4.1",
+    "jose": "^2.0.4",
+    "lodash": "^4.17.21",
+    "mathjs": "^9.2.0",
     "ml-distance-euclidean": "^2.0.0",
-    "mongodb": "^3.6.3",
+    "mongodb": "^3.6.4",
     "mongodb-core": "^3.2.7",
-    "mongoose": "^5.11.11",
+    "mongoose": "^5.11.18",
     "nodemon": "^2.0.7",
     "passport-custom": "^1.1.1",
     "request": "^2.88.2",
@@ -64,11 +64,11 @@
     "serve-favicon": "^2.5.0",
     "uuid": "^8.3.2",
     "winston": "^3.3.3",
-    "ws": "^7.4.2"
+    "ws": "^7.4.3"
   },
   "devDependencies": {
-    "ajv": "^7.0.3",
-    "eslint": "^7.17.0",
-    "mocha": "^8.2.1"
+    "ajv": "^7.1.1",
+    "eslint": "^7.20.0",
+    "mocha": "^8.3.0"
   }
 }
