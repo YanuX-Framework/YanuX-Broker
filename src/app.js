@@ -8,6 +8,7 @@ const feathers = require('@feathersjs/feathers');
 const configuration = require('@feathersjs/configuration');
 const express = require('@feathersjs/express');
 const socketio = require('@feathersjs/socketio');
+const swagger = require('feathers-swagger');
 
 const configure = require('./configure');
 const middleware = require('./middleware');
@@ -32,7 +33,7 @@ app.configure(configuration());
 app.configure(configure);
 
 // Enable security, CORS, compression, favicon and body parsing
-app.use(helmet());
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors());
 app.use(compress());
 app.use(express.json());
@@ -47,6 +48,18 @@ app.use('/api', api);
 
 // Set up Plugins and providers
 app.configure(express.rest());
+
+app.configure(swagger({
+    docsPath: '/docs',
+    uiIndex: path.join(__dirname, 'docs', 'index.html'),
+    specs: {
+        info: {
+            title: 'YanuX Broker API',
+            description: 'YanuX Broker\'s REST API',
+            version: '1.0.0',
+        },
+    },
+}))
 
 // Socket.io
 app.configure(socketio(function (io) {
