@@ -1,5 +1,5 @@
 # YanuX Broker
-A server-side component that is responsible for aggregating and spreading the information that client application instances need to build a cohesive user experience.
+This is part of the [__YanuX Frameworl__](https://yanux-framework.github.io/). It is a server-side component that is responsible for aggregating and spreading the information that client application instances need to build a cohesive user experience.
 
 ## Documentation
 This project is built using to [Feathers](https://feathersjs.com/) framework for [Node.js](https://nodejs.org/en/) and many [other packages](package.json.
