@@ -10,11 +10,23 @@ module.exports = function (app) {
     /* multi: true */
   };
 
-  // Initialize our service with any options it requires
-  app.use('/events', createService(options));
+  const createdService = createService(options);
+  createdService.docs = {
+    description: 'A service to manage events',
+    definitions: {
+      events: {
+        properties: {
+          value: { type: 'object' },
+          name: { type: 'string' },
+          resource: { type: 'string' }
+        }
+      }
+    }
+  };
 
+  // Initialize our service with any options it requires
+  app.use('/events', createdService);
   // Get our initialized service so that we can register hooks
   const service = app.service('events');
-
   service.hooks(hooks);
 };

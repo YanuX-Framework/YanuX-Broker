@@ -1,5 +1,6 @@
 // Initializes the `instances` service on path `/instances`
 const createService = require('feathers-mongoose');
+const m2s = require('mongoose-to-swagger');
 const createModel = require('../../models/instances.model');
 const hooks = require('./instances.hooks');
 

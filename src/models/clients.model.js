@@ -11,7 +11,7 @@ module.exports = function (app) {
   const { Schema } = mongooseClient;
 
   const schema = new Schema({
-    id: { type: String, required: true, unique: true }
+    id: { type: String, required: true, unique: true },
   }, { timestamps: true, minimize: false });
 
   schema.plugin(brokerNamePlugin, { brokerName: app.get('name') });

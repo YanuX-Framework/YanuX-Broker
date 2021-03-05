@@ -50,8 +50,12 @@ app.use('/api', api);
 app.configure(express.rest());
 
 app.configure(swagger({
+    openApiVersion: 3,
     docsPath: '/docs',
     uiIndex: path.join(__dirname, 'docs', 'index.html'),
+    ignore: {
+        paths: ['authentication']
+    },
     specs: {
         info: {
             title: 'YanuX Broker API',
