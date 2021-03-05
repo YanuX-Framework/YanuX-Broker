@@ -9,3 +9,6 @@ Please note that this documentation was partially automatically generated. It's 
 
 ### TODO:
 - Provide additional documentation.
+
+## License
+This work is licensed under [__GNU Affero General Public License Version 3__](LICENSE)
