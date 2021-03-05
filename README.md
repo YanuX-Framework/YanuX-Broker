@@ -2,10 +2,12 @@
 A server-side component that is responsible for aggregating and spreading the information that client application instances need to build a cohesive user experience.
 
 ## Documentation
-The REST API, which is mirrored by the Feathers and Socket.io API, can be inspected here: 
-- https://yanux-framework.github.io/YanuX-Broker
+This project is built using to [Feathers](https://feathersjs.com/) framework for [Node.js](https://nodejs.org/en/) and many [other packages](package.json.
 
-Please note that this documentation was partially automatically generated. It's not exaustive and that it may be incomplete.
+It exposes the following APIs:
+- [__REST API__](https://yanux-framework.github.io/YanuX-Broker/)
+    - Please note that this documentation was partially automatically generated. It's not exaustive and that it may be incomplete.
+- The [__REST API__](https://yanux-framework.github.io/YanuX-Broker/) is "mirrored" by the [Feathers](https://docs.feathersjs.com/api/client.html) and [Socket.io](https://docs.feathersjs.com/api/client/socketio.html) API but these provide [realtime events](https://docs.feathersjs.com/api/events.html#service-events) that can be pushed by the server.
 
 ### TODO:
 - Provide additional documentation.
