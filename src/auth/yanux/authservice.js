@@ -8,9 +8,7 @@ module.exports = class YanuxAuthenticationService extends AuthenticationService 
     }
     async getTokenOptions(authResult, params) {
         const jwtOptions = await super.getTokenOptions(authResult, params);
-        jwtOptions.header = {
-            kid: this.app.get('keys').private_jwk.kid,
-        };
+        jwtOptions.header = { kid: this.app.get('keys').private_jwk.kid };
         return jwtOptions;
     }
     async parse(req, res, ...names) {
@@ -20,8 +18,7 @@ module.exports = class YanuxAuthenticationService extends AuthenticationService 
             const value = await authStrategy.parse(req, res);
             if (value !== null) {
                 if (value.strategy === 'jwt') {
-                    try { if (await this.verifyAccessToken(value.accessToken)) { return value; } }
-                    catch (e) { }
+                    try { if (await this.verifyAccessToken(value.accessToken)) { return value; } } catch (e) { }
                 } else { return value; }
             }
         }
