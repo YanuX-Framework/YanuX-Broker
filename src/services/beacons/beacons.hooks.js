@@ -87,7 +87,14 @@ function updateProxemics(context) {
           } else { delete proxemics.state[detectedDevice.deviceUuid]; }
 
           if (!currentProxemics || !_.isEqual(currentProxemics.state, proxemics.state)) {
-            return context.app.service('proxemics').patch(null, proxemics, { query: { user: proxemics.user } })
+            //return context.app.service('proxemics').patch(null, proxemics, { query: { user: proxemics.user } });
+            /**
+             * TODO:
+             * Test if this old proximity implementation still works well, including the sharing behavior with this little tweak.
+             * Moreover, if I end up reusing this simpler implementation I may just add orientation to it to match the dedicated IPS capabilities.
+             */
+            const users = _.uniq([proxemics.user.toString(), ...currentProxemics && currentProxemics.sharedWith ? currentProxemics.sharedWith.map(u => u.toString()) : []]);
+            return context.app.service('proxemics').patch(null, proxemics, { query: { user: { $in: users } } });
           }
         }
       }).then(() => { resolve(context); }).catch(e => reject(e));
