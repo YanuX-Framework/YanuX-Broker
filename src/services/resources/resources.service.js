@@ -10,7 +10,8 @@ module.exports = function (app) {
 
   const options = {
     Model,
-    multi: true
+    multi: true,
+    whitelist: [ '$populate' ]
     /* paginate */
   };
 
