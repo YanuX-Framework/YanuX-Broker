@@ -15,15 +15,10 @@ const middleware = require('./middleware');
 const services = require('./services');
 const appHooks = require('./app.hooks');
 const channels = require('./channels');
-const mongodb = require('./mongodb');
 const mongoose = require('./mongoose');
 const authentication = require('./authentication');
 const zeroconf = require('./zeroconf');
 const logger = require('./logger');
-
-// --------------------- Disabled modules ---------------------
-// const primus = require('@feathersjs/primus');
-// ------------------------------------------------------------
 
 const app = express(feathers());
 
@@ -77,24 +72,6 @@ app.configure(socketio(function (io) {
         next();
     });
 }));
-
-// -------------------------------------------------------------
-// Disabled Primus (package: @feathersjs/primus)
-// -------------------------------------------------------------
-// // Primus
-// app.configure(primus({
-//     transformer: 'websockets'
-// }, function (primus) {
-//     // Do something with primus
-//     primus.use('feathers-socket', function (req, res) {
-//         // Exposing the requesting socket
-//         req.feathers.socket = req;
-//     });
-// }));
-// -------------------------------------------------------------
-
-// MongoDB
-app.configure(mongodb);
 
 // Mongoose
 app.configure(mongoose);
