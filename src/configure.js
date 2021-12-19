@@ -2,8 +2,8 @@ const fs = require('fs');
 const path = require('path');
 
 const crypto = require('crypto');
-const { fromKeyLike } = require('jose/jwk/from_key_like');
-const { calculateThumbprint } = require('jose/jwk/thumbprint');
+const { exportJWK } = require('jose');
+const { calculateJwkThumbprint } = require('jose');
 
 module.exports = app => {
     // Config Name
@@ -32,17 +32,17 @@ module.exports = app => {
     configKeys.combined_key = crypto.createPublicKey(configKeys.combined_key_pem);
 
     Promise.all([
-        fromKeyLike(configKeys.private_key),
-        fromKeyLike(configKeys.public_key),
-        fromKeyLike(configKeys.combined_key),
+        exportJWK(configKeys.private_key),
+        exportJWK(configKeys.public_key),
+        exportJWK(configKeys.combined_key),
     ]).then(keys => {
         configKeys.private_jwk = keys[0];
         configKeys.public_jwk = keys[1];
         configKeys.combined_jwk = keys[2];
         return Promise.all([
-            calculateThumbprint(configKeys.private_jwk),
-            calculateThumbprint(configKeys.public_jwk),
-            calculateThumbprint(configKeys.combined_jwk)
+            calculateJwkThumbprint(configKeys.private_jwk),
+            calculateJwkThumbprint(configKeys.public_jwk),
+            calculateJwkThumbprint(configKeys.combined_jwk)
         ])
     }).then(tps => {
         configKeys.private_jwk.kid = tps[0];
