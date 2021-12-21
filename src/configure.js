@@ -2,9 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const crypto = require('crypto');
-const { exportJWK } = require('jose');
-const { calculateJwkThumbprint } = require('jose');
-
+const { exportJWK, calculateJwkThumbprint } = require('jose');
 module.exports = app => {
     // Config Name
     app.set('name', process.env.NAME || app.get('name'));
