@@ -50,7 +50,7 @@
     "feathers-mongoose": "^8.3.1",
     "feathers-swagger": "^1.2.1",
     "helmet": "^5.0.1",
-    "jose": "^4.3.7",
+    "jose": "^4.9.2",
     "lodash": "^4.17.21",
     "ml-distance-euclidean": "^2.0.0",
     "mongoose": "^6.0.10",
